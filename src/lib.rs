@@ -45,27 +45,43 @@ impl Board for FixedSizeBoard {
 struct Game<B> where B: Board {
     width: usize,
     height: usize,
+    snake: [(i32,i32);10],
     _pd: std::marker::PhantomData<B>,
 }
 
 impl<B> Game<B> where B: Board {
     pub fn new(width: usize, height: usize) -> Game<B> {
-        Game { width, height, _pd: std::marker::PhantomData::<B> {} }
+        let center_x = (width / 2) as i32;
+        let center_y = (height / 2) as i32;
+
+        let mut snake = [(-1,-1);10];
+        snake[0] = (center_x, center_y);
+        snake[1] = (center_x - 1, center_y);
+
+        Game { width, height, snake, _pd: std::marker::PhantomData::<B> {} }
     }
 
     pub fn board(&self) -> impl Board {
         let mut board = B::default();
 
-        let center_x = dbg!(self.width / 2);
-        let center_y = dbg!(self.height / 2);
-
-        *board.at_mut(center_x, center_y) = Square::Snake;
-        *board.at_mut(center_x - 1, center_y) = Square::Snake;
+        for s in &self.snake {
+            if s.0 == -1  {
+                continue;
+            }
+            *board.at_mut(s.0 as usize, s.1 as usize) = Square::Snake;
+        }
 
         board
     }
 
-    pub fn advance(&self) {}
+    pub fn advance(&mut self) {
+        for s in &mut self.snake {
+            if s.0 == -1  {
+                continue;
+            }
+            s.0 += 1;
+        }
+    }
 }
 
 
@@ -133,15 +149,14 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "          "
-        );
+            "          ");
 
         assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
     }
 
     #[test]
     fn snakes_moves_forward() {
-        let game = Game::<FixedSizeBoard>::new(WIDTH, HEIGHT);
+        let mut game = Game::<FixedSizeBoard>::new(WIDTH, HEIGHT);
 
         let center_x = WIDTH / 2;
         let center_y = HEIGHT / 2;
@@ -160,8 +175,7 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "          "
-        );
+            "          ");
 
         assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
     }
