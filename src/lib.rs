@@ -74,10 +74,26 @@ mod tests {
     use super::*;
     use std::error::Error;
 
+
+    #[macro_export]
+    macro_rules! board_layout {
+    ( $( $x:expr ),* ) => {
+        {
+            let mut temp_vec = Vec::new();
+            $(
+                temp_vec.push(String::from($x));
+            )*
+            temp_vec
+        }
+    };
+}
+
     fn check_board(board: &impl Board, expected: &Vec<String>) -> Vec<String> {
+
         assert_eq!(board.height(), expected.len(), "Invalid height");
 
         expected.iter().enumerate().map(|(y, row)| -> Vec<String> {
+
             assert_eq!(board.width(), row.chars().count(), "Invalid width");
 
             row.chars().enumerate().map(|(x, square)| {
@@ -107,18 +123,18 @@ mod tests {
 
         let mut board = game.board();
 
-        let expected = vec![
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("    ◯◯    "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-        ];
+        let expected = board_layout!(
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "    ◯◯    ",
+            "          ",
+            "          ",
+            "          ",
+            "          "
+        );
 
         assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
     }
@@ -134,18 +150,18 @@ mod tests {
 
         let mut board = game.board();
 
-        let expected = vec![
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("     ◯◯   "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-            String::from("          "),
-        ];
+        let expected = board_layout!(
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "     ◯◯   ",
+            "          ",
+            "          ",
+            "          ",
+            "          "
+        );
 
         assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
     }
