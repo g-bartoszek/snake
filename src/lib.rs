@@ -9,10 +9,55 @@ enum Square {
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
-struct Location
-{
-    x: i32,
-    y: i32
+pub struct Location {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Location {
+    ///
+    /// ```
+    /// use self::snake::{Location, Direction};
+    /// let mut l = Location{x: 10, y: 10};
+    ///
+    /// l = l.move_in(Direction::Up);
+    /// assert_eq!(10, l.x);
+    /// assert_eq!(9, l.y);
+    ///
+    /// l = l.move_in(Direction::Down);
+    /// assert_eq!(10, l.x);
+    /// assert_eq!(10, l.y);
+    ///
+    /// l = l.move_in(Direction::Right);
+    /// assert_eq!(11, l.x);
+    /// assert_eq!(10, l.y);
+    ///
+    /// l = l.move_in(Direction::Left);
+    /// assert_eq!(10, l.x);
+    /// assert_eq!(10, l.y);
+    ///
+    /// ```
+    ///
+    pub fn move_in(self, direction: Direction) -> Location {
+        match direction {
+            Direction::Up => Location {
+                x: self.x,
+                y: self.y - 1,
+            },
+            Direction::Down => Location {
+                x: self.x,
+                y: self.y + 1,
+            },
+            Direction::Left => Location {
+                x: self.x - 1,
+                y: self.y,
+            },
+            Direction::Right => Location {
+                x: self.x + 1,
+                y: self.y,
+            },
+        }
+    }
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -22,7 +67,7 @@ enum SnakeData {
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
-enum Direction {
+pub enum Direction {
     Up,
     Down,
     Left,
@@ -92,8 +137,14 @@ where
         let center_y = (height / 2) as i32;
 
         let mut snake = [SnakeData::NoSnake; 10];
-        snake[1] = SnakeData::Snake(Location{ x: center_x, y: center_y });
-        snake[0] = SnakeData::Snake(Location{ x: center_x - 1, y: center_y });
+        snake[1] = SnakeData::Snake(Location {
+            x: center_x,
+            y: center_y,
+        });
+        snake[0] = SnakeData::Snake(Location {
+            x: center_x - 1,
+            y: center_y,
+        });
 
         Game {
             width,
@@ -120,31 +171,22 @@ where
     }
 
     pub fn advance(&mut self) {
-        for i in 0..(self.snake.len() - 1) {
-            let next = &self.snake[i + 1];
-            let current = &self.snake[i];
-
-            match (current, next) {
-                (SnakeData::Snake(location), SnakeData::NoSnake) => {
-                    println!("Moving head");
-                    match self.direction {
-                        Direction::Up => {
-                            self.snake[i] = SnakeData::Snake(Location{ x: location.x, y: location.y - 1});
-                        }
-                        Direction::Down => {}
-                        Direction::Right => {
-                            self.snake[i] = SnakeData::Snake(Location{ x: location.x + 1, y: location.y});
-                        }
-                        Direction::Left => {}
-                    }
+        let mut new_snake = [SnakeData::NoSnake; 10];
+        let update = self.snake.windows(2).map(|w| -> SnakeData {
+            match w {
+                [SnakeData::Snake(location), SnakeData::NoSnake] => {
+                    SnakeData::Snake(location.move_in(self.direction))
                 }
-                (SnakeData::Snake(_), SnakeData::Snake(_)) => {
-                    println!("Moving tail");
-                    self.snake[i] = *next;
-                }
-                (_, _) => {}
+                [current, next] => next.clone(),
+                _ => SnakeData::NoSnake,
             }
-        }
+        });
+
+        new_snake.iter_mut().zip(update).for_each(|(new, update)| {
+            *new = update;
+        });
+
+        self.snake = new_snake;
     }
 
     pub fn up(&mut self) {
@@ -168,14 +210,18 @@ mod tests {
         }
     }; }
 
+    fn create_game() -> Game<FixedSizeBoard> {
+        Game::<FixedSizeBoard>::new(WIDTH, HEIGHT)
+    }
+
     #[test]
     fn game_is_initialized() {
-        let game = Game::<FixedSizeBoard>::new(WIDTH, HEIGHT);
+        create_game();
     }
 
     #[test]
     fn at_the_beginning_snake_is_in_the_middle() {
-        let game = Game::<FixedSizeBoard>::new(WIDTH, HEIGHT);
+        let game = create_game();
 
         let mut board = game.board();
 
@@ -197,7 +243,7 @@ mod tests {
 
     #[test]
     fn snakes_moves_forward() {
-        let mut game = Game::<FixedSizeBoard>::new(WIDTH, HEIGHT);
+        let mut game = create_game();
 
         game.advance();
 
@@ -221,7 +267,7 @@ mod tests {
 
     #[test]
     fn snakes_turns_up() {
-        let mut game = Game::<FixedSizeBoard>::new(WIDTH, HEIGHT);
+        let mut game = create_game();
 
         game.up();
         game.advance();
@@ -262,13 +308,20 @@ mod tests {
                             _ => Square::Empty,
                         };
 
-                        if board.at(&Location{x: x as i32, y: y as i32}) != expected {
+                        if board.at(&Location {
+                            x: x as i32,
+                            y: y as i32,
+                        }) != expected
+                        {
                             Err(format!(
-                                "X:{} Y:{} should be {:?} but is {:?}",
+                                "X:{} Y:{} should be {:?} but it's {:?}",
                                 x,
                                 y,
                                 expected,
-                                board.at(&Location{x: x as i32, y: y as i32})
+                                board.at(&Location {
+                                    x: x as i32,
+                                    y: y as i32
+                                })
                             ))
                         } else {
                             Ok(())
