@@ -9,8 +9,15 @@ enum Square {
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
+struct Location
+{
+    x: i32,
+    y: i32
+}
+
+#[derive(PartialEq, Copy, Clone, Debug)]
 enum SnakeData {
-    Snake(i32, i32),
+    Snake(Location),
     NoSnake,
 }
 
@@ -25,7 +32,7 @@ enum Direction {
 impl SnakeData {
     pub fn is_snake(&self) -> bool {
         match self {
-            SnakeData::Snake(_, _) => true,
+            SnakeData::Snake(_) => true,
             SnakeData::NoSnake => false,
         }
     }
@@ -34,8 +41,8 @@ impl SnakeData {
 trait Board: Default {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
-    fn at_mut(&mut self, x: usize, y: usize) -> &mut Square;
-    fn at(&self, x: usize, y: usize) -> Square;
+    fn at(&self, location: &Location) -> Square;
+    fn at_mut(&mut self, location: &Location) -> &mut Square;
 }
 
 struct FixedSizeBoard {
@@ -57,15 +64,11 @@ impl Board for FixedSizeBoard {
     fn height(&self) -> usize {
         HEIGHT
     }
-    fn at_mut(&mut self, x: usize, y: usize) -> &mut Square {
-        x;
-        y;
-        &mut self.data[y * self.width() + x]
+    fn at(&self, location: &Location) -> Square {
+        self.data[location.y as usize * self.width() + location.x as usize]
     }
-    fn at(&self, x: usize, y: usize) -> Square {
-        x;
-        y;
-        self.data[y * self.width() + x]
+    fn at_mut(&mut self, location: &Location) -> &mut Square {
+        &mut self.data[location.y as usize * self.width() + location.x as usize]
     }
 }
 
@@ -89,8 +92,8 @@ where
         let center_y = (height / 2) as i32;
 
         let mut snake = [SnakeData::NoSnake; 10];
-        snake[1] = SnakeData::Snake(center_x, center_y);
-        snake[0] = SnakeData::Snake(center_x - 1, center_y);
+        snake[1] = SnakeData::Snake(Location{ x: center_x, y: center_y });
+        snake[0] = SnakeData::Snake(Location{ x: center_x - 1, y: center_y });
 
         Game {
             width,
@@ -108,12 +111,10 @@ where
             .iter()
             .take_while(|s| s.is_snake())
             .for_each(|s| {
-                if let SnakeData::Snake(x, y) = s {
-                    *board.at_mut(*x as usize, *y as usize) = Square::Snake;
+                if let SnakeData::Snake(location) = s {
+                    *board.at_mut(location) = Square::Snake;
                 }
             });
-
-        for s in &self.snake {}
 
         board
     }
@@ -124,20 +125,20 @@ where
             let current = &self.snake[i];
 
             match (current, next) {
-                (SnakeData::Snake(x, y), SnakeData::NoSnake) => {
+                (SnakeData::Snake(location), SnakeData::NoSnake) => {
                     println!("Moving head");
                     match self.direction {
                         Direction::Up => {
-                            self.snake[i] = SnakeData::Snake(*x, *y - 1);
+                            self.snake[i] = SnakeData::Snake(Location{ x: location.x, y: location.y - 1});
                         }
                         Direction::Down => {}
                         Direction::Right => {
-                            self.snake[i] = SnakeData::Snake(*x + 1, *y);
+                            self.snake[i] = SnakeData::Snake(Location{ x: location.x + 1, y: location.y});
                         }
                         Direction::Left => {}
                     }
                 }
-                (SnakeData::Snake(_, _), SnakeData::Snake(_, _)) => {
+                (SnakeData::Snake(_), SnakeData::Snake(_)) => {
                     println!("Moving tail");
                     self.snake[i] = *next;
                 }
@@ -261,13 +262,13 @@ mod tests {
                             _ => Square::Empty,
                         };
 
-                        if board.at(x, y) != expected {
+                        if board.at(&Location{x: x as i32, y: y as i32}) != expected {
                             Err(format!(
                                 "X:{} Y:{} should be {:?} but is {:?}",
                                 x,
                                 y,
                                 expected,
-                                board.at(x, y)
+                                board.at(&Location{x: x as i32, y: y as i32})
                             ))
                         } else {
                             Ok(())
