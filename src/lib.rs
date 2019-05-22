@@ -9,7 +9,9 @@ enum Square {
 }
 
 impl Default for Square {
-    fn default() -> Self {Square::Empty}
+    fn default() -> Self {
+        Square::Empty
+    }
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -70,6 +72,12 @@ enum SnakeData {
     NoSnake,
 }
 
+impl Default for SnakeData {
+    fn default() -> Self {
+        SnakeData::NoSnake
+    }
+}
+
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Direction {
     Up,
@@ -87,17 +95,23 @@ impl SnakeData {
     }
 }
 
-trait PreallocatedArray<T> : Default {
-   fn as_slice(&self) -> &[T];
-   fn as_mut_slice(&mut self) -> & mut[T];
+trait PreallocatedArray<T>: Default {
+    fn as_slice(&self) -> &[T];
+    fn as_mut_slice(&mut self) -> &mut [T];
 }
 
-struct CurrentWidthAndHeightArray<T> where T: Default + Copy {
+struct CurrentWidthAndHeightArray<T>
+where
+    T: Default + Copy,
+{
     data: [T; WIDTH * HEIGHT],
 }
 
-impl <T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T> where T: Default + Copy {
-    fn as_slice(&self) -> & [T] {
+impl<T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T>
+where
+    T: Default + Copy,
+{
+    fn as_slice(&self) -> &[T] {
         &self.data
     }
     fn as_mut_slice(&mut self) -> &mut [T] {
@@ -105,7 +119,10 @@ impl <T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T> where T: Default
     }
 }
 
-impl <T> Default for CurrentWidthAndHeightArray<T> where T: Default + Copy {
+impl<T> Default for CurrentWidthAndHeightArray<T>
+where
+    T: Default + Copy,
+{
     fn default() -> Self {
         Self {
             data: [T::default(); WIDTH * HEIGHT],
@@ -121,11 +138,17 @@ trait Board: Default {
 }
 
 #[derive(Default)]
-struct FixedSizeBoard<T> where  T: PreallocatedArray<Square> {
+struct FixedSizeBoard<T>
+where
+    T: PreallocatedArray<Square>,
+{
     data: T,
 }
 
-impl<T> Board for FixedSizeBoard<T> where T: PreallocatedArray<Square> {
+impl<T> Board for FixedSizeBoard<T>
+where
+    T: PreallocatedArray<Square>,
+{
     fn width(&self) -> usize {
         WIDTH
     }
@@ -141,31 +164,33 @@ impl<T> Board for FixedSizeBoard<T> where T: PreallocatedArray<Square> {
     }
 }
 
-struct Game<B>
+struct Game<B, S>
 where
     B: PreallocatedArray<Square>,
+    S: PreallocatedArray<SnakeData>,
 {
     width: usize,
     height: usize,
-    snake: [SnakeData; 10],
+    snake: S,
     direction: Direction,
     _pd: std::marker::PhantomData<B>,
 }
 
-impl<B> Game<B>
+impl<B, S> Game<B, S>
 where
-    B: PreallocatedArray<Square> + Default,
+    B: PreallocatedArray<Square>,
+    S: PreallocatedArray<SnakeData>,
 {
-    pub fn new(width: usize, height: usize) -> Game<B> {
+    pub fn new(width: usize, height: usize) -> Game<B, S> {
         let center_x = (width / 2) as i32;
         let center_y = (height / 2) as i32;
 
-        let mut snake = [SnakeData::NoSnake; 10];
-        snake[1] = SnakeData::Snake(Location {
+        let mut snake = S::default();
+        snake.as_mut_slice()[1] = SnakeData::Snake(Location {
             x: center_x,
             y: center_y,
         });
-        snake[0] = SnakeData::Snake(Location {
+        snake.as_mut_slice()[0] = SnakeData::Snake(Location {
             x: center_x - 1,
             y: center_y,
         });
@@ -183,6 +208,7 @@ where
         let mut board = FixedSizeBoard::<B>::default();
 
         self.snake
+            .as_slice()
             .iter()
             .take_while(|s| s.is_snake())
             .for_each(|s| {
@@ -195,8 +221,8 @@ where
     }
 
     pub fn advance(&mut self) {
-        let mut new_snake = [SnakeData::NoSnake; 10];
-        let update = self.snake.windows(2).map(|w| -> SnakeData {
+        let mut new_snake = S::default();
+        let update = self.snake.as_slice().windows(2).map(|w| -> SnakeData {
             match w {
                 [SnakeData::Snake(location), SnakeData::NoSnake] => {
                     SnakeData::Snake(location.move_in(self.direction))
@@ -206,9 +232,13 @@ where
             }
         });
 
-        new_snake.iter_mut().zip(update).for_each(|(new, update)| {
-            *new = update;
-        });
+        new_snake
+            .as_mut_slice()
+            .iter_mut()
+            .zip(update)
+            .for_each(|(new, update)| {
+                *new = update;
+            });
 
         self.snake = new_snake;
     }
@@ -234,8 +264,11 @@ mod tests {
         }
     }; }
 
-    fn create_game() -> Game<CurrentWidthAndHeightArray<Square>> {
-        Game::<CurrentWidthAndHeightArray<Square>>::new(WIDTH, HEIGHT)
+    fn create_game(
+    ) -> Game<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>> {
+        Game::<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>>::new(
+            WIDTH, HEIGHT,
+        )
     }
 
     #[test]
