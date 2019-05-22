@@ -3,9 +3,13 @@ const HEIGHT: usize = 10;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 enum Square {
-    Snake,
     Fruit,
     Empty,
+    Snake,
+}
+
+impl Default for Square {
+    fn default() -> Self {Square::Empty}
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -83,6 +87,32 @@ impl SnakeData {
     }
 }
 
+trait PreallocatedArray<T> : Default {
+   fn as_slice(&self) -> &[T];
+   fn as_mut_slice(&mut self) -> & mut[T];
+}
+
+struct CurrentWidthAndHeightArray<T> where T: Default + Copy {
+    data: [T; WIDTH * HEIGHT],
+}
+
+impl <T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T> where T: Default + Copy {
+    fn as_slice(&self) -> & [T] {
+        &self.data
+    }
+    fn as_mut_slice(&mut self) -> &mut [T] {
+        &mut self.data
+    }
+}
+
+impl <T> Default for CurrentWidthAndHeightArray<T> where T: Default + Copy {
+    fn default() -> Self {
+        Self {
+            data: [T::default(); WIDTH * HEIGHT],
+        }
+    }
+}
+
 trait Board: Default {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
@@ -90,19 +120,12 @@ trait Board: Default {
     fn at_mut(&mut self, location: &Location) -> &mut Square;
 }
 
-struct FixedSizeBoard {
-    data: [Square; WIDTH * HEIGHT],
+#[derive(Default)]
+struct FixedSizeBoard<T> where  T: PreallocatedArray<Square> {
+    data: T,
 }
 
-impl Default for FixedSizeBoard {
-    fn default() -> Self {
-        Self {
-            data: [Square::Empty; WIDTH * HEIGHT],
-        }
-    }
-}
-
-impl Board for FixedSizeBoard {
+impl<T> Board for FixedSizeBoard<T> where T: PreallocatedArray<Square> {
     fn width(&self) -> usize {
         WIDTH
     }
@@ -110,16 +133,17 @@ impl Board for FixedSizeBoard {
         HEIGHT
     }
     fn at(&self, location: &Location) -> Square {
-        self.data[location.y as usize * self.width() + location.x as usize]
+        self.data.as_slice()[location.y as usize * self.width() + location.x as usize]
     }
     fn at_mut(&mut self, location: &Location) -> &mut Square {
-        &mut self.data[location.y as usize * self.width() + location.x as usize]
+        let width = self.width();
+        &mut self.data.as_mut_slice()[location.y as usize * width + location.x as usize]
     }
 }
 
 struct Game<B>
 where
-    B: Board,
+    B: PreallocatedArray<Square>,
 {
     width: usize,
     height: usize,
@@ -130,7 +154,7 @@ where
 
 impl<B> Game<B>
 where
-    B: Board,
+    B: PreallocatedArray<Square> + Default,
 {
     pub fn new(width: usize, height: usize) -> Game<B> {
         let center_x = (width / 2) as i32;
@@ -156,7 +180,7 @@ where
     }
 
     pub fn board(&self) -> impl Board {
-        let mut board = B::default();
+        let mut board = FixedSizeBoard::<B>::default();
 
         self.snake
             .iter()
@@ -210,8 +234,8 @@ mod tests {
         }
     }; }
 
-    fn create_game() -> Game<FixedSizeBoard> {
-        Game::<FixedSizeBoard>::new(WIDTH, HEIGHT)
+    fn create_game() -> Game<CurrentWidthAndHeightArray<Square>> {
+        Game::<CurrentWidthAndHeightArray<Square>>::new(WIDTH, HEIGHT)
     }
 
     #[test]
