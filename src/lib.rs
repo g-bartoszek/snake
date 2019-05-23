@@ -1,3 +1,4 @@
+
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
     Fruit,
@@ -144,24 +145,33 @@ where
     }
 }
 
-struct Game<B, S>
+struct Game<B, S, R>
 where
     B: PreallocatedArray<Square>,
     S: PreallocatedArray<SnakeData>,
+    R: RandomNumberGenerator
 {
     width: usize,
     height: usize,
     snake: S,
+    snake_size: usize,
     direction: Direction,
+    fruit: Location,
+    rng: R,
     _pd: std::marker::PhantomData<B>,
 }
 
-impl<B, S> Game<B, S>
+trait RandomNumberGenerator: Default {
+    fn next(&mut self) -> u32;
+}
+
+impl<B, S, R> Game<B, S, R>
 where
     B: PreallocatedArray<Square>,
     S: PreallocatedArray<SnakeData>,
+    R: RandomNumberGenerator
 {
-    pub fn new(width: usize, height: usize) -> Game<B, S> {
+    pub fn new(width: usize, height: usize) -> Game<B, S, R> {
         let center_x = (width / 2) as i32;
         let center_y = (height / 2) as i32;
 
@@ -175,17 +185,24 @@ where
             y: center_y,
         });
 
+        let mut rng = R::default();
+
         Game {
             width,
             height,
             snake,
+            snake_size: 2,
             direction: Direction::Right,
+            fruit: Location{x:rng.next() as i32, y:rng.next() as i32},
+            rng,
             _pd: std::marker::PhantomData::<B> {},
         }
     }
 
     pub fn board(&self) -> impl Board {
         let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
+
+        *board.at_mut(&self.fruit) = Square::Fruit;
 
         self.snake
             .as_slice()
@@ -201,6 +218,16 @@ where
     }
 
     pub fn advance(&mut self) {
+        let head = &self.snake.as_slice()[self.snake_size - 1];
+        if let SnakeData::Snake(location) = head {
+            let new_location = location.move_in(self.direction);
+            if self.fruit == new_location {
+                self.snake.as_mut_slice()[self.snake_size] = SnakeData::Snake(new_location);
+                self.fruit = Location{x:self.rng.next() as i32, y:self.rng.next() as i32};
+                return;
+            }
+        }
+
         let mut new_snake = S::default();
         let update = self.snake.as_slice().windows(2).map(|w| {
             match w {
@@ -224,7 +251,9 @@ where
     }
 
     pub fn up(&mut self) {
-        self.direction = Direction::Up;
+        if self.direction != Direction::Down {
+            self.direction = Direction::Up;
+        }
     }
 
     pub fn left(&mut self) {
@@ -234,11 +263,15 @@ where
     }
 
     pub fn down(&mut self) {
-           self.direction = Direction::Down;
+        if self.direction != Direction::Up {
+            self.direction = Direction::Down;
+        }
     }
 
     pub fn right(&mut self) {
-        self.direction = Direction::Right;
+        if self.direction != Direction::Left {
+            self.direction = Direction::Right;
+        }
     }
 }
 
@@ -250,8 +283,8 @@ mod tests {
     use test_utils::*;
 
     fn create_game(
-    ) -> Game<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>> {
-        Game::<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>>::new(
+    ) -> Game<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>, HardcodedNumbersGenerator> {
+        Game::<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>, HardcodedNumbersGenerator>::new(
             WIDTH, HEIGHT,
         )
     }
@@ -270,7 +303,7 @@ mod tests {
         let expected = board_layout!(
             "     ",
             "     ",
-            " OO  ",
+            " OO F",
             "     ",
             "     "
         );
@@ -284,12 +317,10 @@ mod tests {
 
         game.advance();
 
-        let mut board = game.board();
-
         let expected = board_layout!(
             "     ",
             "     ",
-            "  OO ",
+            "  OOF",
             "     ",
             "     "
         );
@@ -307,7 +338,7 @@ mod tests {
         let expected = board_layout!(
             "     ",
             "  O  ",
-            "  O  ",
+            "  O F",
             "     ",
             "     "
         );
@@ -327,7 +358,7 @@ mod tests {
         let expected = board_layout!(
             "     ",
             " OO  ",
-            "     ",
+            "    F",
             "     ",
             "     "
         );
@@ -345,7 +376,7 @@ mod tests {
         let expected = board_layout!(
             "     ",
             "     ",
-            "  O  ",
+            "  O F",
             "  O  ",
             "     "
         );
@@ -365,7 +396,7 @@ mod tests {
         let expected = board_layout!(
             "     ",
             "     ",
-            "     ",
+            "    F",
             "  OO ",
             "     "
         );
@@ -374,7 +405,7 @@ mod tests {
     }
 
     #[test]
-    fn snake_can_not_turn_back() {
+    fn snake_cant_turn_left_when_its_moving_right() {
         let mut game = create_game();
 
         game.left();
@@ -383,8 +414,111 @@ mod tests {
         let expected = board_layout!(
             "     ",
             "     ",
-            "  OO ",
+            "  OOF",
             "     ",
+            "     "
+        );
+
+        assert_board!(&game.board(), &expected);
+    }
+
+    #[test]
+    fn snake_cant_turn_right_when_its_moving_left() {
+        let mut game = create_game();
+
+        game.up();
+        game.advance();
+        game.left();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            " OO  ",
+            "    F",
+            "     ",
+            "     "
+        ));
+
+        game.right();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            "OO   ",
+            "    F",
+            "     ",
+            "     "
+        ));
+    }
+
+    #[test]
+    fn snake_cant_turn_up_when_its_moving_down() {
+        let mut game = create_game();
+
+        game.down();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            "     ",
+            "  O F",
+            "  O  ",
+            "     "
+        ));
+
+        game.up();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            "     ",
+            "    F",
+            "  O  ",
+            "  O  "
+        ));
+
+    }
+
+    #[test]
+    fn snake_cant_turn_down_when_its_moving_up() {
+        let mut game = create_game();
+
+        game.up();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            "  O  ",
+            "  O F",
+            "     ",
+            "     "
+        ));
+
+        game.down();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "  O  ",
+            "  O  ",
+            "    F",
+            "     ",
+            "     "
+        ));
+
+    }
+
+    #[test]
+    fn when_snake_eats_fruit_it_grows_and_new_fruit_is_placed() {
+        let mut game = create_game();
+
+        game.advance();
+        game.advance();
+
+        let expected = board_layout!(
+            "     ",
+            "     ",
+            "  OOO",
+            "    F",
             "     "
         );
 

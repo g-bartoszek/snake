@@ -1,5 +1,6 @@
 use crate::*;
 use std::fmt::Write;
+use std::thread::current;
 
 pub const WIDTH: usize = 5;
 pub const HEIGHT: usize = 5;
@@ -34,6 +35,26 @@ where
     }
 }
 
+pub struct HardcodedNumbersGenerator {
+    numbers: [u32; 4],
+    current: usize,
+}
+
+impl RandomNumberGenerator for HardcodedNumbersGenerator {
+    fn next(&mut self) -> u32 {
+        let result = self.numbers[self.current];
+        self.current = (self.current + 1) % self.numbers.len();
+        result
+    }
+}
+
+impl Default for HardcodedNumbersGenerator {
+    fn default() -> Self {
+        HardcodedNumbersGenerator {numbers: [4,2,4,3], current: 0 }
+    }
+}
+
+
 #[macro_export]
 macro_rules! board_layout {
     ( $( $x:expr ),* ) => {
@@ -60,6 +81,7 @@ macro_rules! assert_board {
         }
     }};
 }
+
 
 pub fn expected_to_string(expected: &Vec<String>) -> String {
     let mut result = String::new();
