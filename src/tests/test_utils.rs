@@ -53,8 +53,8 @@ macro_rules! assert_board {
         if !result.is_empty() {
             panic!(
                 "\nExpected:\n{}Actual:\n{}Errors:\n{:?}\n",
-                board_to_string($actual),
                 expected_to_string($expected),
+                board_to_string($actual),
                 result
             );
         }

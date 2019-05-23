@@ -202,7 +202,7 @@ where
 
     pub fn advance(&mut self) {
         let mut new_snake = S::default();
-        let update = self.snake.as_slice().windows(2).map(|w| -> SnakeData {
+        let update = self.snake.as_slice().windows(2).map(|w| {
             match w {
                 [SnakeData::Snake(location), SnakeData::NoSnake] => {
                     SnakeData::Snake(location.move_in(self.direction))
@@ -225,6 +225,20 @@ where
 
     pub fn up(&mut self) {
         self.direction = Direction::Up;
+    }
+
+    pub fn left(&mut self) {
+        if self.direction != Direction::Right {
+            self.direction = Direction::Left;
+        }
+    }
+
+    pub fn down(&mut self) {
+           self.direction = Direction::Down;
+    }
+
+    pub fn right(&mut self) {
+        self.direction = Direction::Right;
     }
 }
 
@@ -266,11 +280,11 @@ mod tests {
             "          "
         );
 
-        assert_board!(&board, &expected);
+        assert_board!(&game.board(), &expected);
     }
 
     #[test]
-    fn snakes_moves_forward() {
+    fn snake_moves_forward() {
         let mut game = create_game();
 
         game.advance();
@@ -290,17 +304,15 @@ mod tests {
             "          "
         );
 
-        assert_board!(&board, &expected);
+        assert_board!(&game.board(), &expected);
     }
 
     #[test]
-    fn snakes_turns_up() {
+    fn snake_turns_up() {
         let mut game = create_game();
 
         game.up();
         game.advance();
-
-        let mut board = game.board();
 
         let expected = board_layout!(
             "          ",
@@ -315,7 +327,103 @@ mod tests {
             "          "
         );
 
-        assert_board!(&board, &expected);
+        assert_board!(&game.board(), &expected);
+    }
+
+    #[test]
+    fn snake_turns_left() {
+        let mut game = create_game();
+
+        game.up();
+        game.advance();
+        game.left();
+        game.advance();
+
+        let expected = board_layout!(
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "    OO    ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          "
+        );
+
+        assert_board!(&game.board(), &expected);
+    }
+
+    #[test]
+    fn snake_turns_down() {
+        let mut game = create_game();
+
+        game.down();
+        game.advance();
+
+        let expected = board_layout!(
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "     O    ",
+            "     O    ",
+            "          ",
+            "          ",
+            "          "
+        );
+
+        assert_board!(&game.board(), &expected);
+    }
+
+    #[test]
+    fn snake_turns_right() {
+        let mut game = create_game();
+
+        game.down();
+        game.advance();
+        game.right();
+        game.advance();
+
+        let expected = board_layout!(
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "     OO   ",
+            "          ",
+            "          ",
+            "          "
+        );
+
+        assert_board!(&game.board(), &expected);
+    }
+
+    #[test]
+    fn snake_can_not_turn_back() {
+        let mut game = create_game();
+
+        game.left();
+        game.advance();
+
+        let expected = board_layout!(
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "          ",
+            "     OO   ",
+            "          ",
+            "          ",
+            "          ",
+            "          "
+        );
+
+        assert_board!(&game.board(), &expected);
     }
 
 }
