@@ -97,7 +97,6 @@ trait PreallocatedArray<T>: Default {
     fn as_mut_slice(&mut self) -> &mut [T];
 }
 
-
 pub trait Board {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
@@ -115,15 +114,16 @@ where
 }
 
 impl<T> FixedSizeBoard<T>
-    where
-        T: PreallocatedArray<Square> {
-   pub fn new(width: usize, height: usize) -> Self {
-       Self {
-           data: T::default(),
-           width,
-           height
-       }
-   }
+where
+    T: PreallocatedArray<Square>,
+{
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            data: T::default(),
+            width,
+            height,
+        }
+    }
 }
 
 impl<T> Board for FixedSizeBoard<T>
@@ -207,7 +207,7 @@ where
                 [SnakeData::Snake(location), SnakeData::NoSnake] => {
                     SnakeData::Snake(location.move_in(self.direction))
                 }
-                [current, next] => next.clone(),
+                [_, next] => next.clone(),
                 _ => SnakeData::NoSnake,
             }
         });
@@ -235,8 +235,6 @@ mod tests {
     use super::*;
     use test_utils::*;
 
-
-
     fn create_game(
     ) -> Game<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>> {
         Game::<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>>::new(
@@ -261,14 +259,14 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "    ◯◯    ",
+            "    OO    ",
             "          ",
             "          ",
             "          ",
             "          "
         );
 
-        assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
+        assert_board!(&board, &expected);
     }
 
     #[test]
@@ -285,14 +283,14 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "     ◯◯   ",
+            "     OO   ",
             "          ",
             "          ",
             "          ",
             "          "
         );
 
-        assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
+        assert_board!(&board, &expected);
     }
 
     #[test]
@@ -309,16 +307,15 @@ mod tests {
             "          ",
             "          ",
             "          ",
-            "     ◯    ",
-            "     ◯    ",
+            "     O    ",
+            "     O    ",
             "          ",
             "          ",
             "          ",
             "          "
         );
 
-        assert_eq!(Vec::<String>::new(), check_board(&board, &expected));
+        assert_board!(&board, &expected);
     }
-
 
 }

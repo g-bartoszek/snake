@@ -1,18 +1,19 @@
 use crate::*;
+use std::fmt::Write;
 
 pub const WIDTH: usize = 10;
 pub const HEIGHT: usize = 10;
 
 pub struct CurrentWidthAndHeightArray<T>
-    where
-        T: Default + Copy,
+where
+    T: Default + Copy,
 {
     data: [T; WIDTH * HEIGHT],
 }
 
 impl<T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T>
-    where
-        T: Default + Copy,
+where
+    T: Default + Copy,
 {
     fn as_slice(&self) -> &[T] {
         &self.data
@@ -23,8 +24,8 @@ impl<T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T>
 }
 
 impl<T> Default for CurrentWidthAndHeightArray<T>
-    where
-        T: Default + Copy,
+where
+    T: Default + Copy,
 {
     fn default() -> Self {
         Self {
@@ -45,6 +46,52 @@ macro_rules! board_layout {
         }
     }; }
 
+#[macro_export]
+macro_rules! assert_board {
+    ( $actual:expr , $expected:expr ) => {{
+        let result = check_board($actual, $expected);
+        if !result.is_empty() {
+            panic!(
+                "\nExpected:\n{}Actual:\n{}Errors:\n{:?}\n",
+                board_to_string($actual),
+                expected_to_string($expected),
+                result
+            );
+        }
+    }};
+}
+
+pub fn expected_to_string(expected: &Vec<String>) -> String {
+    let mut result = String::new();
+    for e in expected {
+        write!(result, "\"{}\"\n", e);
+    }
+    result
+}
+
+pub fn board_to_string(board: &Board) -> String {
+    let mut result = String::new();
+    for y in 0..board.height() {
+        write!(result, "\"");
+        for x in 0..board.width() {
+            write!(
+                result,
+                "{}",
+                match board.at(&Location {
+                    x: x as i32,
+                    y: y as i32
+                }) {
+                    Square::Snake => 'O',
+                    Square::Fruit => 'F',
+                    Square::Empty => ' ',
+                }
+            );
+        }
+        write!(result, "\"\n");
+    }
+    result
+}
+
 pub fn check_board(board: &impl Board, expected: &Vec<String>) -> Vec<String> {
     assert_eq!(board.height(), expected.len(), "Invalid height");
 
@@ -58,7 +105,7 @@ pub fn check_board(board: &impl Board, expected: &Vec<String>) -> Vec<String> {
                 .enumerate()
                 .map(|(x, square)| {
                     let expected = match square {
-                        '◯' => Square::Snake,
+                        'O' => Square::Snake,
                         'F' => Square::Fruit,
                         _ => Square::Empty,
                     };
