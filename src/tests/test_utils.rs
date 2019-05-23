@@ -1,8 +1,8 @@
 use crate::*;
 use std::fmt::Write;
 
-pub const WIDTH: usize = 10;
-pub const HEIGHT: usize = 10;
+pub const WIDTH: usize = 5;
+pub const HEIGHT: usize = 5;
 
 pub struct CurrentWidthAndHeightArray<T>
 where

@@ -268,16 +268,11 @@ mod tests {
         let mut board = game.board();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "    OO    ",
-            "          ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            "     ",
+            " OO  ",
+            "     ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
@@ -292,16 +287,11 @@ mod tests {
         let mut board = game.board();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "     OO   ",
-            "          ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            "     ",
+            "  OO ",
+            "     ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
@@ -315,16 +305,11 @@ mod tests {
         game.advance();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "     O    ",
-            "     O    ",
-            "          ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            "  O  ",
+            "  O  ",
+            "     ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
@@ -340,16 +325,11 @@ mod tests {
         game.advance();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "    OO    ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            " OO  ",
+            "     ",
+            "     ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
@@ -363,16 +343,11 @@ mod tests {
         game.advance();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "     O    ",
-            "     O    ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            "     ",
+            "  O  ",
+            "  O  ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
@@ -388,16 +363,11 @@ mod tests {
         game.advance();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "     OO   ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            "     ",
+            "     ",
+            "  OO ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
@@ -411,16 +381,11 @@ mod tests {
         game.advance();
 
         let expected = board_layout!(
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "          ",
-            "     OO   ",
-            "          ",
-            "          ",
-            "          ",
-            "          "
+            "     ",
+            "     ",
+            "  OO ",
+            "     ",
+            "     "
         );
 
         assert_board!(&game.board(), &expected);
