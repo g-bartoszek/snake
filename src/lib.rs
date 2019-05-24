@@ -185,18 +185,20 @@ where
             y: center_y,
         });
 
-        let mut rng = R::default();
-
-        Game {
+        let mut game = Game {
             width,
             height,
             snake,
             snake_size: 2,
             direction: Direction::Right,
-            fruit: Location{x:rng.next() as i32, y:rng.next() as i32},
-            rng,
+            fruit: Location{x: 0,  y: 0},
+            rng: R::default(),
             _pd: std::marker::PhantomData::<B> {},
-        }
+        };
+
+        game.place_new_fruit();
+
+        game
     }
 
     pub fn board(&self) -> impl Board {
@@ -220,10 +222,9 @@ where
     pub fn advance(&mut self) {
         let head = &self.snake.as_slice()[self.snake_size - 1];
         if let SnakeData::Snake(location) = head {
-            let new_location = location.move_in(self.direction);
-            if self.fruit == new_location {
-                self.snake.as_mut_slice()[self.snake_size] = SnakeData::Snake(new_location);
-                self.fruit = Location{x:self.rng.next() as i32, y:self.rng.next() as i32};
+            if self.fruit == location.move_in(self.direction) {
+                self.eat_the_fruit();
+                self.place_new_fruit();
                 return;
             }
         }
@@ -272,6 +273,15 @@ where
         if self.direction != Direction::Left {
             self.direction = Direction::Right;
         }
+    }
+
+    fn place_new_fruit(&mut self) {
+        self.fruit = Location{x:self.rng.next() as i32, y:self.rng.next() as i32};
+    }
+
+    fn eat_the_fruit(&mut self) {
+        self.snake.as_mut_slice()[self.snake_size] = SnakeData::Snake(self.fruit);
+        self.snake_size += 1;
     }
 }
 
@@ -523,6 +533,33 @@ mod tests {
         );
 
         assert_board!(&game.board(), &expected);
+    }
+
+    #[test]
+    fn when_snake_eats_another_fruit_it_grows_even_more() {
+        let mut game = create_game();
+
+        game.advance();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            "     ",
+            "  OOO",
+            "    F",
+            "     "
+        ));
+
+        game.down();
+        game.advance();
+
+        assert_board!(&game.board(), &board_layout!(
+            "     ",
+            "     ",
+            "  OOO",
+            "    O",
+            "    F"
+        ));
     }
 
 }

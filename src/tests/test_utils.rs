@@ -36,7 +36,7 @@ where
 }
 
 pub struct HardcodedNumbersGenerator {
-    numbers: [u32; 4],
+    numbers: [u32; 6],
     current: usize,
 }
 
@@ -50,7 +50,7 @@ impl RandomNumberGenerator for HardcodedNumbersGenerator {
 
 impl Default for HardcodedNumbersGenerator {
     fn default() -> Self {
-        HardcodedNumbersGenerator {numbers: [4,2,4,3], current: 0 }
+        HardcodedNumbersGenerator {numbers: [4,2,4,3,4,4], current: 0 }
     }
 }
 
