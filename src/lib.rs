@@ -293,8 +293,8 @@ mod tests {
     use test_utils::*;
 
     fn create_game(
-    ) -> Game<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>, HardcodedNumbersGenerator> {
-        Game::<CurrentWidthAndHeightArray<Square>, CurrentWidthAndHeightArray<SnakeData>, HardcodedNumbersGenerator>::new(
+    ) -> Game<Array5x5<Square>, Array5x5<SnakeData>, HardcodedNumbersGenerator> {
+        Game::<Array5x5<Square>, Array5x5<SnakeData>, HardcodedNumbersGenerator>::new(
             WIDTH, HEIGHT,
         )
     }

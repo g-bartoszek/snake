@@ -1,20 +1,22 @@
 use crate::*;
 use std::fmt::Write;
 use std::thread::current;
+use generic_array;
 
-pub const WIDTH: usize = 5;
 pub const HEIGHT: usize = 5;
+pub const WIDTH: usize = 5;
 
-pub struct CurrentWidthAndHeightArray<T>
+pub struct GenericArrayAdapter<T, S>
 where
-    T: Default + Copy,
+    T: Default + Copy, S: generic_array::ArrayLength<T>
 {
-    data: [T; WIDTH * HEIGHT],
+    data: generic_array::GenericArray<T, S>,
+    pd: std::marker::PhantomData<S>
 }
 
-impl<T> PreallocatedArray<T> for CurrentWidthAndHeightArray<T>
+impl<T, S> PreallocatedArray<T> for GenericArrayAdapter<T, S>
 where
-    T: Default + Copy,
+    T: Default + Copy, S: generic_array::ArrayLength<T>
 {
     fn as_slice(&self) -> &[T] {
         &self.data
@@ -24,16 +26,20 @@ where
     }
 }
 
-impl<T> Default for CurrentWidthAndHeightArray<T>
+impl<T, S> Default for GenericArrayAdapter<T, S>
 where
-    T: Default + Copy,
+    T: Default + Copy, S: generic_array::ArrayLength<T>
 {
     fn default() -> Self {
+        let x = S::USIZE;
         Self {
-            data: [T::default(); WIDTH * HEIGHT],
+            data: generic_array::GenericArray::<T, S>::default(),
+            pd: std::marker::PhantomData::<S>{}
         }
     }
 }
+
+pub type Array5x5<T> = GenericArrayAdapter<T, generic_array::typenum::U25>;
 
 pub struct HardcodedNumbersGenerator {
     numbers: [u32; 6],
