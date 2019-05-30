@@ -1,22 +1,24 @@
 use crate::*;
+use generic_array;
 use std::fmt::Write;
 use std::thread::current;
-use generic_array;
 
 pub const HEIGHT: usize = 5;
 pub const WIDTH: usize = 5;
 
 pub struct GenericArrayAdapter<T, S>
 where
-    T: Default + Copy, S: generic_array::ArrayLength<T>
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     data: generic_array::GenericArray<T, S>,
-    pd: std::marker::PhantomData<S>
+    pd: std::marker::PhantomData<S>,
 }
 
 impl<T, S> PreallocatedArray<T> for GenericArrayAdapter<T, S>
 where
-    T: Default + Copy, S: generic_array::ArrayLength<T>
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     fn as_slice(&self) -> &[T] {
         &self.data
@@ -28,18 +30,20 @@ where
 
 impl<T, S> Default for GenericArrayAdapter<T, S>
 where
-    T: Default + Copy, S: generic_array::ArrayLength<T>
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     fn default() -> Self {
         let x = S::USIZE;
         Self {
             data: generic_array::GenericArray::<T, S>::default(),
-            pd: std::marker::PhantomData::<S>{}
+            pd: std::marker::PhantomData::<S> {},
         }
     }
 }
 
 pub type Array5x5<T> = GenericArrayAdapter<T, generic_array::typenum::U25>;
+pub type Array3x3<T> = GenericArrayAdapter<T, generic_array::typenum::U9>;
 
 pub struct HardcodedNumbersGenerator {
     numbers: [u32; 6],
@@ -56,10 +60,12 @@ impl RandomNumberGenerator for HardcodedNumbersGenerator {
 
 impl Default for HardcodedNumbersGenerator {
     fn default() -> Self {
-        HardcodedNumbersGenerator {numbers: [4,2,4,3,4,4], current: 0 }
+        HardcodedNumbersGenerator {
+            numbers: [4, 2, 4, 3, 4, 4],
+            current: 0,
+        }
     }
 }
-
 
 #[macro_export]
 macro_rules! board_layout {
@@ -87,7 +93,6 @@ macro_rules! assert_board {
         }
     }};
 }
-
 
 pub fn expected_to_string(expected: &Vec<String>) -> String {
     let mut result = String::new();
