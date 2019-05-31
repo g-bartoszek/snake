@@ -110,7 +110,7 @@ pub enum Direction {
     Right,
 }
 
-trait PreallocatedArray<T>: Default + Index<usize, Output=T> + IndexMut<usize, Output=T> {
+trait PreallocatedArray<T>: Default + Index<usize, Output = T> + IndexMut<usize, Output = T> {
     fn as_slice(&self) -> &[T];
     fn as_mut_slice(&mut self) -> &mut [T];
 }
@@ -155,7 +155,7 @@ where
         self.height
     }
     fn at(&self, location: &Location) -> Square {
-       self.data[location.y as usize * self.width + location.x as usize]
+        self.data[location.y as usize * self.width + location.x as usize]
     }
     fn at_mut(&mut self, location: &Location) -> &mut Square {
         &mut self.data[location.y as usize * self.width + location.x as usize]
@@ -230,21 +230,17 @@ where
             GameStatus::InProgress => {
                 *board.at_mut(&self.fruit) = Square::Fruit;
 
-                self.snake
-                    .as_slice()[0..self.snake_size]
+                self.snake.as_slice()[0..self.snake_size]
                     .iter()
                     .for_each(|l| {
                         *board.at_mut(l) = Square::Snake;
                     });
-            },
+            }
             GameStatus::Won => {
-                self.snake
-                    .as_slice()
-                    .iter()
-                    .for_each(|l| {
-                        *board.at_mut(l) = Square::Snake;
-                    });
-            },
+                self.snake.as_slice().iter().for_each(|l| {
+                    *board.at_mut(l) = Square::Snake;
+                });
+            }
             GameStatus::Lost => {}
         }
 
@@ -253,17 +249,16 @@ where
 
     pub fn advance(&mut self) -> GameStatus {
         if self.status == GameStatus::InProgress {
-            self.status = self.advance_impl()
+            self.status = self.move_snake_and_get_status()
         }
         self.status
     }
 
-    fn advance_impl(&mut self) -> GameStatus {
-        let new_head = self.snake[self.snake_size - 1].move_in(self.direction)
+    fn move_snake_and_get_status(&mut self) -> GameStatus {
+        let new_head = self.snake[self.snake_size - 1]
+            .move_in(self.direction)
             .wrap(self.width, self.height);
-        if self.fruit == new_head
-
-        {
+        if self.fruit == new_head {
             self.eat_the_fruit();
             if let Some(location) = self.place_new_fruit() {
                 self.fruit = location;
@@ -271,16 +266,15 @@ where
             } else {
                 return GameStatus::Won;
             }
-        } else if self.snake.as_mut_slice()[0..self.snake_size].contains(&new_head) {
-            return GameStatus::Lost
+        } else if self.snake.as_slice()[0..self.snake_size].contains(&new_head) {
+            return GameStatus::Lost;
         }
-
 
         for i in 0..self.snake_size - 1 {
-            self.snake[i] = self.snake[i+1];
+            self.snake[i] = self.snake[i + 1];
         }
 
-        self.snake[self.snake_size-1] = new_head;
+        self.snake[self.snake_size - 1] = new_head;
         GameStatus::InProgress
     }
 
@@ -314,7 +308,8 @@ where
         let fruit = Location {
             x: self.rng.next() as i32,
             y: self.rng.next() as i32,
-        }.wrap(self.width, self.height);
+        }
+        .wrap(self.width, self.height);
 
         return place_new_fruit(fruit, self.width, self.height, snake);
     }
@@ -331,10 +326,13 @@ fn place_new_fruit(
     height: usize,
     taken: &[Location],
 ) -> Option<Location> {
-
-        for y in 0..height {
-            for x in 0..width {
-            let l = Location{x: expected.x + x as i32, y: expected.y + y as i32}.wrap(width, height);
+    for y in 0..height {
+        for x in 0..width {
+            let l = Location {
+                x: expected.x + x as i32,
+                y: expected.y + y as i32,
+            }
+            .wrap(width, height);
             if !taken.contains(&l) {
                 return Some(l);
             }
@@ -708,6 +706,7 @@ mod tests {
         game.down();
         assert_eq!(GameStatus::InProgress, game.advance());
         assert_eq!(GameStatus::Lost, game.advance());
+        assert_eq!(GameStatus::Lost, game.advance());
 
         assert_board!(
             &game.board(),
@@ -760,8 +759,6 @@ mod tests {
             "OOO"
         )
         );
-
-
     }
 
     #[test]

@@ -41,9 +41,9 @@ where
 }
 
 impl<T, S> Index<usize> for GenericArrayAdapter<T, S>
-    where
-        T: Default + Copy,
-        S: generic_array::ArrayLength<T>,
+where
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     type Output = T;
     fn index(&self, index: usize) -> &T {
@@ -52,9 +52,9 @@ impl<T, S> Index<usize> for GenericArrayAdapter<T, S>
 }
 
 impl<T, S> IndexMut<usize> for GenericArrayAdapter<T, S>
-    where
-        T: Default + Copy,
-        S: generic_array::ArrayLength<T>,
+where
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     fn index_mut(&mut self, index: usize) -> &mut T {
         &mut self.data[index]
@@ -137,7 +137,8 @@ pub fn board_to_string(board: &Board) -> String {
                     Square::Fruit => 'F',
                     Square::Empty => ' ',
                 }
-            ).unwrap();
+            )
+            .unwrap();
         }
         write!(result, "\"\n").unwrap();
     }
