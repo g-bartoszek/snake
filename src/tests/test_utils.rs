@@ -1,6 +1,7 @@
 use crate::*;
 use generic_array;
 use std::fmt::Write;
+use std::process::Output;
 
 pub const HEIGHT: usize = 5;
 pub const WIDTH: usize = 5;
@@ -37,6 +38,27 @@ where
             data: generic_array::GenericArray::<T, S>::default(),
             pd: std::marker::PhantomData::<S> {},
         }
+    }
+}
+
+impl<T, S> Index<usize> for GenericArrayAdapter<T, S>
+    where
+        T: Default + Copy,
+        S: generic_array::ArrayLength<T>,
+{
+    type Output = T;
+    fn index(&self, index: usize) -> &T {
+        &self.data[index]
+    }
+}
+
+impl<T, S> IndexMut<usize> for GenericArrayAdapter<T, S>
+    where
+        T: Default + Copy,
+        S: generic_array::ArrayLength<T>,
+{
+    fn index_mut(&mut self, index: usize) -> &mut T {
+        &mut self.data[index]
     }
 }
 

@@ -1,3 +1,4 @@
+use core::ops::{Index, IndexMut};
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
@@ -102,7 +103,7 @@ pub enum Direction {
     Right,
 }
 
-trait PreallocatedArray<T>: Default {
+trait PreallocatedArray<T>: Default + Index<usize, Output=T> + IndexMut<usize, Output=T> {
     fn as_slice(&self) -> &[T];
     fn as_mut_slice(&mut self) -> &mut [T];
 }
@@ -147,10 +148,10 @@ where
         self.height
     }
     fn at(&self, location: &Location) -> Square {
-        self.data.as_slice()[location.y as usize * self.width + location.x as usize]
+       self.data[location.y as usize * self.width + location.x as usize]
     }
     fn at_mut(&mut self, location: &Location) -> &mut Square {
-        &mut self.data.as_mut_slice()[location.y as usize * self.width + location.x as usize]
+        &mut self.data[location.y as usize * self.width + location.x as usize]
     }
 }
 
@@ -229,7 +230,7 @@ where
     }
 
     pub fn advance(&mut self) {
-        let new_head = self.snake.as_slice()[self.snake_size - 1].move_in(self.direction)
+        let new_head = self.snake[self.snake_size - 1].move_in(self.direction)
                     .wrap(self.width, self.height);
             if self.fruit == new_head
 
@@ -241,10 +242,10 @@ where
 
 
         for i in 0..self.snake_size - 1 {
-            self.snake.as_mut_slice()[i] = self.snake.as_slice()[i+1];
+            self.snake[i] = self.snake[i+1];
         }
 
-        self.snake.as_mut_slice()[self.snake_size-1] = new_head;
+        self.snake[self.snake_size-1] = new_head;
     }
 
     pub fn up(&mut self) {
@@ -283,7 +284,7 @@ where
     }
 
     fn eat_the_fruit(&mut self) {
-        self.snake.as_mut_slice()[self.snake_size] = self.fruit;
+        self.snake[self.snake_size] = self.fruit;
         self.snake_size += 1;
     }
 }
