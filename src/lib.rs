@@ -1,5 +1,3 @@
-use core::fmt::Debug;
-use std::ptr::swap_nonoverlapping;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
@@ -276,12 +274,12 @@ where
     fn place_new_fruit(&mut self) {
         let snake = &self.snake.as_slice()[0..self.snake_size];
 
-        let mut fruit = Location {
-            x: dbg!(self.rng.next()) as i32,
+        let fruit = Location {
+            x: self.rng.next() as i32,
             y: self.rng.next() as i32,
-        }.wrap(dbg!(self.width), self.height);
+        }.wrap(self.width, self.height);
 
-        self.fruit = place_new_fruit(dbg!(fruit), self.width, self.height, snake).unwrap();
+        self.fruit = place_new_fruit(fruit, self.width, self.height, snake).unwrap();
     }
 
     fn eat_the_fruit(&mut self) {
@@ -291,7 +289,7 @@ where
 }
 
 fn place_new_fruit(
-    mut expected: Location,
+    expected: Location,
     width: usize,
     height: usize,
     taken: &[Location],
@@ -330,8 +328,6 @@ mod tests {
     #[test]
     fn at_the_beginning_snake_is_in_the_middle() {
         let game = create_game();
-
-        let mut board = game.board();
 
         let expected = board_layout!(
             "     ",
@@ -649,14 +645,14 @@ mod tests {
     #[test]
     fn place_new_fruit_takes_first_free_location() {
         let expected_location = Location { x: 0, y: 0 };
-        let mut taken_locations = [Location { x: 0, y: 0 }];
+        let taken_locations = [Location { x: 0, y: 0 }];
 
         assert_eq!(
             Some(Location { x: 1, y: 0 }),
             place_new_fruit(expected_location, 2, 2, &taken_locations)
         );
 
-        let mut taken_locations = [Location { x: 0, y: 0 }, Location { x: 1, y: 0 }];
+        let taken_locations = [Location { x: 0, y: 0 }, Location { x: 1, y: 0 }];
 
         assert_eq!(
             Some(Location { x: 0, y: 1 }),
@@ -664,7 +660,7 @@ mod tests {
         );
 
         let expected_location = Location { x: 1, y: 0 };
-        let mut taken_locations = [Location { x: 1, y: 0 }];
+        let taken_locations = [Location { x: 1, y: 0 }];
 
         assert_eq!(
             Some(Location { x: 0, y: 0 }),
@@ -672,7 +668,7 @@ mod tests {
         );
 
         let expected_location = Location { x: 4, y: 2 };
-        let mut taken_locations = [];
+        let taken_locations = [];
 
         assert_eq!(
             Some(Location { x: 1, y: 2 }),

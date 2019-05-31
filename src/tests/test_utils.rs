@@ -1,7 +1,6 @@
 use crate::*;
 use generic_array;
 use std::fmt::Write;
-use std::thread::current;
 
 pub const HEIGHT: usize = 5;
 pub const WIDTH: usize = 5;
@@ -34,7 +33,6 @@ where
     S: generic_array::ArrayLength<T>,
 {
     fn default() -> Self {
-        let x = S::USIZE;
         Self {
             data: generic_array::GenericArray::<T, S>::default(),
             pd: std::marker::PhantomData::<S> {},
@@ -97,7 +95,7 @@ macro_rules! assert_board {
 pub fn expected_to_string(expected: &Vec<String>) -> String {
     let mut result = String::new();
     for e in expected {
-        write!(result, "\"{}\"\n", e);
+        write!(result, "\"{}\"\n", e).unwrap();
     }
     result
 }
@@ -105,7 +103,7 @@ pub fn expected_to_string(expected: &Vec<String>) -> String {
 pub fn board_to_string(board: &Board) -> String {
     let mut result = String::new();
     for y in 0..board.height() {
-        write!(result, "\"");
+        write!(result, "\"").unwrap();
         for x in 0..board.width() {
             write!(
                 result,
@@ -118,9 +116,9 @@ pub fn board_to_string(board: &Board) -> String {
                     Square::Fruit => 'F',
                     Square::Empty => ' ',
                 }
-            );
+            ).unwrap();
         }
-        write!(result, "\"\n");
+        write!(result, "\"\n").unwrap();
     }
     result
 }
