@@ -7,6 +7,13 @@ pub enum Square {
     Snake,
 }
 
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum GameStatus {
+    InProgress,
+    Lost,
+    Won,
+}
+
 impl Default for Square {
     fn default() -> Self {
         Square::Empty
@@ -167,6 +174,7 @@ where
     snake_size: usize,
     direction: Direction,
     fruit: Location,
+    status: GameStatus,
     rng: R,
     _pd: std::marker::PhantomData<B>,
 }
@@ -205,11 +213,12 @@ where
             snake_size: 2,
             direction: Direction::Right,
             fruit: Location { x: 0, y: 0 },
+            status: GameStatus::InProgress,
             rng: R::default(),
             _pd: std::marker::PhantomData::<B> {},
         };
 
-        game.place_new_fruit();
+        game.fruit = game.place_new_fruit().unwrap();
 
         game
     }
@@ -217,28 +226,54 @@ where
     pub fn board(&self) -> impl Board {
         let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
 
-        *board.at_mut(&self.fruit) = Square::Fruit;
+        match self.status {
+            GameStatus::InProgress => {
+                *board.at_mut(&self.fruit) = Square::Fruit;
 
-        self.snake
-            .as_slice()[0..self.snake_size]
-            .iter()
-            .for_each(|l| {
-                    *board.at_mut(l) = Square::Snake;
-            });
+                self.snake
+                    .as_slice()[0..self.snake_size]
+                    .iter()
+                    .for_each(|l| {
+                        *board.at_mut(l) = Square::Snake;
+                    });
+            },
+            GameStatus::Won => {
+                self.snake
+                    .as_slice()
+                    .iter()
+                    .for_each(|l| {
+                        *board.at_mut(l) = Square::Snake;
+                    });
+            },
+            GameStatus::Lost => {}
+        }
 
         board
     }
 
-    pub fn advance(&mut self) {
-        let new_head = self.snake[self.snake_size - 1].move_in(self.direction)
-                    .wrap(self.width, self.height);
-            if self.fruit == new_head
+    pub fn advance(&mut self) -> GameStatus {
+        if self.status == GameStatus::InProgress {
+            self.status = self.advance_impl()
+        }
+        self.status
+    }
 
-            {
-                self.eat_the_fruit();
-                self.place_new_fruit();
-                return;
+    fn advance_impl(&mut self) -> GameStatus {
+        let new_head = self.snake[self.snake_size - 1].move_in(self.direction)
+            .wrap(self.width, self.height);
+        if self.fruit == new_head
+
+        {
+            self.eat_the_fruit();
+            if let Some(location) = self.place_new_fruit() {
+                self.fruit = location;
+                return GameStatus::InProgress;
+            } else {
+                return GameStatus::Won;
             }
+        } else if self.snake.as_mut_slice()[0..self.snake_size].contains(&new_head) {
+            return GameStatus::Lost
+        }
 
 
         for i in 0..self.snake_size - 1 {
@@ -246,6 +281,7 @@ where
         }
 
         self.snake[self.snake_size-1] = new_head;
+        GameStatus::InProgress
     }
 
     pub fn up(&mut self) {
@@ -272,7 +308,7 @@ where
         }
     }
 
-    fn place_new_fruit(&mut self) {
+    fn place_new_fruit(&mut self) -> Option<Location> {
         let snake = &self.snake.as_slice()[0..self.snake_size];
 
         let fruit = Location {
@@ -280,7 +316,7 @@ where
             y: self.rng.next() as i32,
         }.wrap(self.width, self.height);
 
-        self.fruit = place_new_fruit(fruit, self.width, self.height, snake).unwrap();
+        return place_new_fruit(fruit, self.width, self.height, snake);
     }
 
     fn eat_the_fruit(&mut self) {
@@ -641,6 +677,91 @@ mod tests {
             " O "
         )
         );
+    }
+
+    #[test]
+    fn when_snake_bites_itself_the_game_is_lost() {
+        let mut game =
+            Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
+
+        assert_board!(
+            &game.board(),
+            &board_layout!(
+            "   ",
+            "OO ",
+            " F "
+        )
+        );
+
+        game.down();
+        game.advance();
+
+        assert_board!(
+            &game.board(),
+            &board_layout!(
+            " F ",
+            "OO ",
+            " O "
+        )
+        );
+
+        game.down();
+        assert_eq!(GameStatus::InProgress, game.advance());
+        assert_eq!(GameStatus::Lost, game.advance());
+
+        assert_board!(
+            &game.board(),
+            &board_layout!(
+            "   ",
+            "   ",
+            "   "
+        )
+        );
+    }
+
+    #[test]
+    fn when_there_is_no_place_for_new_fruit_the_game_is_won() {
+        let mut game =
+            Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
+
+        assert_board!(
+            &game.board(),
+            &board_layout!(
+            "   ",
+            "OO ",
+            " F "
+        )
+        );
+
+        game.down();
+        game.advance();
+        game.advance();
+        game.right();
+        game.advance();
+        game.down();
+        game.advance();
+        game.advance();
+        game.right();
+        game.advance();
+        game.down();
+        game.advance();
+        game.advance();
+        game.right();
+        game.advance();
+        game.down();
+        assert_eq!(GameStatus::Won, game.advance());
+        assert_eq!(GameStatus::Won, game.advance());
+
+        assert_board!(
+            &game.board(),
+            &board_layout!(
+            "OOO",
+            "OOO",
+            "OOO"
+        )
+        );
+
+
     }
 
     #[test]

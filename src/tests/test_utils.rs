@@ -1,7 +1,6 @@
 use crate::*;
 use generic_array;
 use std::fmt::Write;
-use std::process::Output;
 
 pub const HEIGHT: usize = 5;
 pub const WIDTH: usize = 5;
