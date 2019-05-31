@@ -241,23 +241,12 @@ where
                 return;
             }
 
-        let mut new_snake = S::default();
-        let update = self.snake.as_mut_slice()[0..(self.snake_size)].windows(2).map(|w| match w {
-            [_, next] => next.clone(),
-            _ => Location{x:0,y:0},
-        });
 
-        new_snake
-            .as_mut_slice()
-            .iter_mut()
-            .zip(update)
-            .for_each(|(new, update)| {
-                *new = update;
-            });
+        for i in 0..self.snake_size - 1 {
+            self.snake.as_mut_slice()[i] = self.snake.as_slice()[i+1];
+        }
 
-        new_snake.as_mut_slice()[self.snake_size-1] = dbg!(new_head);
-
-        self.snake = new_snake;
+        self.snake.as_mut_slice()[self.snake_size-1] = new_head;
     }
 
     pub fn up(&mut self) {
