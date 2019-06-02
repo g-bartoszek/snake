@@ -1,4 +1,5 @@
 use core::ops::{Index, IndexMut};
+use std::ops::Deref;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
@@ -110,9 +111,7 @@ pub enum Direction {
     Right,
 }
 
-trait PreallocatedArray<T>: Default + Index<usize, Output = T> + IndexMut<usize, Output = T> {
-    fn as_slice(&self) -> &[T];
-    fn as_mut_slice(&mut self) -> &mut [T];
+trait PreallocatedArray<T> : Default + Index<usize, Output = T> + IndexMut<usize, Output = T> + Deref<Target=[T]> {
 }
 
 pub trait Board {
@@ -190,18 +189,18 @@ where
     R: RandomNumberGenerator,
 {
     pub fn new(width: usize, height: usize) -> Game<B, S, R> {
-        assert_eq!(S::default().as_slice().len(), width * height);
-        assert_eq!(B::default().as_slice().len(), width * height);
+        assert_eq!(S::default().len(), width * height);
+        assert_eq!(B::default().len(), width * height);
 
         let center_x = (width / 2) as i32;
         let center_y = (height / 2) as i32;
 
         let mut snake = S::default();
-        snake.as_mut_slice()[1] = Location {
+        snake[1] = Location {
             x: center_x,
             y: center_y,
         };
-        snake.as_mut_slice()[0] = Location {
+        snake[0] = Location {
             x: center_x - 1,
             y: center_y,
         };
@@ -230,14 +229,14 @@ where
             GameStatus::InProgress => {
                 *board.at_mut(&self.fruit) = Square::Fruit;
 
-                self.snake.as_slice()[0..self.snake_size]
+                (*self.snake)[0..self.snake_size]
                     .iter()
                     .for_each(|l| {
                         *board.at_mut(l) = Square::Snake;
                     });
             }
             GameStatus::Won => {
-                self.snake.as_slice().iter().for_each(|l| {
+                self.snake.iter().for_each(|l| {
                     *board.at_mut(l) = Square::Snake;
                 });
             }
@@ -266,7 +265,7 @@ where
             } else {
                 return GameStatus::Won;
             }
-        } else if self.snake.as_slice()[0..self.snake_size].contains(&new_head) {
+        } else if (*self.snake)[0..self.snake_size].contains(&new_head) {
             return GameStatus::Lost;
         }
 
@@ -303,7 +302,7 @@ where
     }
 
     fn place_new_fruit(&mut self) -> Option<Location> {
-        let snake = &self.snake.as_slice()[0..self.snake_size];
+        let snake = &(*self.snake)[0..self.snake_size];
 
         let fruit = Location {
             x: self.rng.next() as i32,

@@ -19,12 +19,6 @@ where
     T: Default + Copy,
     S: generic_array::ArrayLength<T>,
 {
-    fn as_slice(&self) -> &[T] {
-        &self.data
-    }
-    fn as_mut_slice(&mut self) -> &mut [T] {
-        &mut self.data
-    }
 }
 
 impl<T, S> Default for GenericArrayAdapter<T, S>
@@ -48,6 +42,17 @@ where
     type Output = T;
     fn index(&self, index: usize) -> &T {
         &self.data[index]
+    }
+}
+
+impl<T, S> Deref for GenericArrayAdapter<T, S>
+    where
+        T: Default + Copy,
+        S: generic_array::ArrayLength<T>,
+{
+    type Target = [T];
+    fn deref(&self) -> &Self::Target {
+        &self.data
     }
 }
 
