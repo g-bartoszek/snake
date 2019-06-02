@@ -35,9 +35,9 @@ where
 }
 
 impl<T, S> Deref for GenericArrayAdapter<T, S>
-    where
-        T: Default + Copy,
-        S: generic_array::ArrayLength<T>,
+where
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     type Target = [T];
     fn deref(&self) -> &Self::Target {
@@ -46,9 +46,9 @@ impl<T, S> Deref for GenericArrayAdapter<T, S>
 }
 
 impl<T, S> DerefMut for GenericArrayAdapter<T, S>
-    where
-        T: Default + Copy,
-        S: generic_array::ArrayLength<T>,
+where
+    T: Default + Copy,
+    S: generic_array::ArrayLength<T>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.data

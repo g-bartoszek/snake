@@ -1,5 +1,5 @@
-use core::ops::{Index, IndexMut};
 use core::ops::{Deref, DerefMut};
+use derive_new::new;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
@@ -21,7 +21,7 @@ impl Default for Square {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug, Default)]
+#[derive(PartialEq, Copy, Clone, Debug, Default, new)]
 pub struct Location {
     pub x: i32,
     pub y: i32,
@@ -31,7 +31,7 @@ impl Location {
     ///
     /// ```
     /// use self::snake::{Location, Direction};
-    /// let mut l = Location{x: 10, y: 10};
+    /// let mut l = Location::new(10, 10);
     ///
     /// l = l.move_in(Direction::Up);
     /// assert_eq!(10, l.x);
@@ -54,22 +54,10 @@ impl Location {
     ///
     pub fn move_in(self, direction: Direction) -> Location {
         match direction {
-            Direction::Up => Location {
-                x: self.x,
-                y: self.y - 1,
-            },
-            Direction::Down => Location {
-                x: self.x,
-                y: self.y + 1,
-            },
-            Direction::Left => Location {
-                x: self.x - 1,
-                y: self.y,
-            },
-            Direction::Right => Location {
-                x: self.x + 1,
-                y: self.y,
-            },
+            Direction::Up => Location::new(self.x, self.y - 1),
+            Direction::Down => Location::new(self.x, self.y + 1),
+            Direction::Left => Location::new(self.x - 1, self.y),
+            Direction::Right => Location::new(self.x + 1, self.y),
         }
     }
     /// ```rust
@@ -111,8 +99,7 @@ pub enum Direction {
     Right,
 }
 
-trait PreallocatedArray<T> : Default + Deref<Target=[T]> + DerefMut<Target=[T]> {
-}
+pub trait PreallocatedArray<T>: Default + Deref<Target = [T]> + DerefMut<Target = [T]> {}
 
 pub trait Board {
     fn width(&self) -> usize;
@@ -121,7 +108,7 @@ pub trait Board {
     fn at_mut(&mut self, location: &Location) -> &mut Square;
 }
 
-struct FixedSizeBoard<T>
+pub struct FixedSizeBoard<T>
 where
     T: PreallocatedArray<Square>,
 {
@@ -161,7 +148,7 @@ where
     }
 }
 
-struct Game<B, S, R>
+pub struct Game<B, S, R>
 where
     B: PreallocatedArray<Square>,
     S: PreallocatedArray<Location>,
@@ -178,7 +165,7 @@ where
     _pd: std::marker::PhantomData<B>,
 }
 
-trait RandomNumberGenerator: Default {
+pub trait RandomNumberGenerator: Default {
     fn next(&mut self) -> u32;
 }
 
@@ -196,14 +183,8 @@ where
         let center_y = (height / 2) as i32;
 
         let mut snake = S::default();
-        snake[1] = Location {
-            x: center_x,
-            y: center_y,
-        };
-        snake[0] = Location {
-            x: center_x - 1,
-            y: center_y,
-        };
+        snake[1] = Location::new(center_x, center_y);
+        snake[0] = Location::new(center_x - 1, center_y);
 
         let mut game = Game {
             width,
@@ -211,7 +192,7 @@ where
             snake,
             snake_size: 2,
             direction: Direction::Right,
-            fruit: Location { x: 0, y: 0 },
+            fruit: Location::new(0, 0),
             status: GameStatus::InProgress,
             rng: R::default(),
             _pd: std::marker::PhantomData::<B> {},
@@ -229,11 +210,9 @@ where
             GameStatus::InProgress => {
                 *board.at_mut(&self.fruit) = Square::Fruit;
 
-                (*self.snake)[0..self.snake_size]
-                    .iter()
-                    .for_each(|l| {
-                        *board.at_mut(l) = Square::Snake;
-                    });
+                (*self.snake)[0..self.snake_size].iter().for_each(|l| {
+                    *board.at_mut(l) = Square::Snake;
+                });
             }
             GameStatus::Won => {
                 self.snake.iter().for_each(|l| {
@@ -304,11 +283,8 @@ where
     fn place_new_fruit(&mut self) -> Option<Location> {
         let snake = &(*self.snake)[0..self.snake_size];
 
-        let fruit = Location {
-            x: self.rng.next() as i32,
-            y: self.rng.next() as i32,
-        }
-        .wrap(self.width, self.height);
+        let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32)
+            .wrap(self.width, self.height);
 
         return place_new_fruit(fruit, self.width, self.height, snake);
     }
