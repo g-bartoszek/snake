@@ -34,17 +34,6 @@ where
     }
 }
 
-impl<T, S> Index<usize> for GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
-{
-    type Output = T;
-    fn index(&self, index: usize) -> &T {
-        &self.data[index]
-    }
-}
-
 impl<T, S> Deref for GenericArrayAdapter<T, S>
     where
         T: Default + Copy,
@@ -56,13 +45,13 @@ impl<T, S> Deref for GenericArrayAdapter<T, S>
     }
 }
 
-impl<T, S> IndexMut<usize> for GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
+impl<T, S> DerefMut for GenericArrayAdapter<T, S>
+    where
+        T: Default + Copy,
+        S: generic_array::ArrayLength<T>,
 {
-    fn index_mut(&mut self, index: usize) -> &mut T {
-        &mut self.data[index]
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
     }
 }
 

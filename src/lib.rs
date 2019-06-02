@@ -1,5 +1,5 @@
 use core::ops::{Index, IndexMut};
-use std::ops::Deref;
+use core::ops::{Deref, DerefMut};
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
@@ -111,7 +111,7 @@ pub enum Direction {
     Right,
 }
 
-trait PreallocatedArray<T> : Default + Index<usize, Output = T> + IndexMut<usize, Output = T> + Deref<Target=[T]> {
+trait PreallocatedArray<T> : Default + Deref<Target=[T]> + DerefMut<Target=[T]> {
 }
 
 pub trait Board {
