@@ -210,7 +210,7 @@ where
             GameStatus::InProgress => {
                 *board.at_mut(&self.fruit) = Square::Fruit;
 
-                (*self.snake)[0..self.snake_size].iter().for_each(|l| {
+                self.snake().iter().for_each(|l| {
                     *board.at_mut(l) = Square::Snake;
                 });
             }
@@ -233,27 +233,42 @@ where
     }
 
     fn move_snake_and_get_status(&mut self) -> GameStatus {
-        let new_head = self.snake[self.snake_size - 1]
-            .move_in(self.direction)
-            .wrap(self.width, self.height);
+        let new_head = self.calcualte_new_head_location();
+
         if self.fruit == new_head {
             self.eat_the_fruit();
-            if let Some(location) = self.place_new_fruit() {
-                self.fruit = location;
-                return GameStatus::InProgress;
-            } else {
-                return GameStatus::Won;
-            }
-        } else if (*self.snake)[0..self.snake_size].contains(&new_head) {
+
+            return match self.place_new_fruit() {
+                Some(location) => {
+                    self.fruit = location;
+                    GameStatus::InProgress
+                }
+                None => GameStatus::Won,
+            };
+        } else if self.snake().contains(&new_head) {
             return GameStatus::Lost;
+        } else {
+            self.move_snake_in_current_direction(new_head);
         }
 
+        GameStatus::InProgress
+    }
+
+    fn calcualte_new_head_location(&self) -> Location {
+         self
+            .snake()
+            .last()
+            .unwrap()
+            .move_in(self.direction)
+            .wrap(self.width, self.height)
+    }
+
+    fn move_snake_in_current_direction(&mut self, new_head: Location) {
         for i in 0..self.snake_size - 1 {
             self.snake[i] = self.snake[i + 1];
         }
 
-        self.snake[self.snake_size - 1] = new_head;
-        GameStatus::InProgress
+        *self.snake_mut().last_mut().unwrap() = new_head;
     }
 
     pub fn up(&mut self) {
@@ -281,17 +296,23 @@ where
     }
 
     fn place_new_fruit(&mut self) -> Option<Location> {
-        let snake = &(*self.snake)[0..self.snake_size];
-
         let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32)
             .wrap(self.width, self.height);
 
-        return place_new_fruit(fruit, self.width, self.height, snake);
+        return place_new_fruit(fruit, self.width, self.height, self.snake());
     }
 
     fn eat_the_fruit(&mut self) {
         self.snake[self.snake_size] = self.fruit;
         self.snake_size += 1;
+    }
+
+    fn snake(&self) -> &[Location] {
+        &self.snake[0..self.snake_size]
+    }
+
+    fn snake_mut(&mut self) -> &mut [Location] {
+        &mut self.snake[0..self.snake_size]
     }
 }
 
