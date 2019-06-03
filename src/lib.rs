@@ -1,6 +1,8 @@
 use core::ops::{Deref, DerefMut};
 use derive_new::new;
 
+pub mod generic_array_adapter;
+
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
     Fruit,
@@ -108,6 +110,15 @@ pub trait Board {
     fn at_mut(&mut self, location: &Location) -> &mut Square;
 }
 
+pub trait Snake {
+    fn board(&mut self) -> &Board;
+    fn advance(&mut self) -> GameStatus;
+    fn up(&mut self);
+    fn left(&mut self);
+    fn down(&mut self);
+    fn right(&mut self);
+}
+
 pub struct FixedSizeBoard<T>
 where
     T: PreallocatedArray<Square>,
@@ -162,7 +173,7 @@ where
     fruit: Location,
     status: GameStatus,
     rng: R,
-    _pd: std::marker::PhantomData<B>,
+    board: FixedSizeBoard<B>
 }
 
 pub trait RandomNumberGenerator: Default {
@@ -195,7 +206,7 @@ where
             fruit: Location::new(0, 0),
             status: GameStatus::InProgress,
             rng: R::default(),
-            _pd: std::marker::PhantomData::<B> {},
+            board: FixedSizeBoard::<B>::new(width, height)
         };
 
         game.fruit = game.place_new_fruit().unwrap();
@@ -203,33 +214,24 @@ where
         game
     }
 
-    pub fn board(&self) -> impl Board {
-        let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
+    fn place_new_fruit(&mut self) -> Option<Location> {
+        let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32)
+            .wrap(self.width, self.height);
 
-        match self.status {
-            GameStatus::InProgress => {
-                *board.at_mut(&self.fruit) = Square::Fruit;
-
-                self.snake().iter().for_each(|l| {
-                    *board.at_mut(l) = Square::Snake;
-                });
-            }
-            GameStatus::Won => {
-                self.snake.iter().for_each(|l| {
-                    *board.at_mut(l) = Square::Snake;
-                });
-            }
-            GameStatus::Lost => {}
-        }
-
-        board
+        return place_new_fruit(fruit, self.width, self.height, self.snake());
     }
 
-    pub fn advance(&mut self) -> GameStatus {
-        if self.status == GameStatus::InProgress {
-            self.status = self.move_snake_and_get_status()
-        }
-        self.status
+    fn eat_the_fruit(&mut self) {
+        self.snake[self.snake_size] = self.fruit;
+        self.snake_size += 1;
+    }
+
+    fn snake(&self) -> &[Location] {
+        &self.snake[0..self.snake_size]
+    }
+
+    fn snake_mut(&mut self) -> &mut [Location] {
+        &mut self.snake[0..self.snake_size]
     }
 
     fn move_snake_and_get_status(&mut self) -> GameStatus {
@@ -255,7 +257,7 @@ where
     }
 
     fn calcualte_new_head_location(&self) -> Location {
-         self
+        self
             .snake()
             .last()
             .unwrap()
@@ -271,49 +273,68 @@ where
         *self.snake_mut().last_mut().unwrap() = new_head;
     }
 
-    pub fn up(&mut self) {
+}
+
+impl<B, S, R> Snake for Game<B, S, R>
+where
+B: PreallocatedArray<Square>,
+S: PreallocatedArray<Location>,
+    R: RandomNumberGenerator,
+    {
+    fn board(&mut self) -> &Board {
+        let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
+
+        match self.status {
+            GameStatus::InProgress => {
+                *board.at_mut(&self.fruit) = Square::Fruit;
+
+                self.snake().iter().for_each(|l| {
+                    *board.at_mut(l) = Square::Snake;
+                });
+            }
+            GameStatus::Won => {
+                self.snake.iter().for_each(|l| {
+                    *board.at_mut(l) = Square::Snake;
+                });
+            }
+            GameStatus::Lost => {}
+        }
+
+        self.board = board;
+        &self.board
+    }
+
+    fn advance(&mut self) -> GameStatus {
+        if self.status == GameStatus::InProgress {
+            self.status = self.move_snake_and_get_status()
+        }
+        self.status
+    }
+
+    fn up(&mut self) {
         if self.direction != Direction::Down {
             self.direction = Direction::Up;
         }
     }
 
-    pub fn left(&mut self) {
+    fn left(&mut self) {
         if self.direction != Direction::Right {
             self.direction = Direction::Left;
         }
     }
 
-    pub fn down(&mut self) {
+    fn down(&mut self) {
         if self.direction != Direction::Up {
             self.direction = Direction::Down;
         }
     }
 
-    pub fn right(&mut self) {
+    fn right(&mut self) {
         if self.direction != Direction::Left {
             self.direction = Direction::Right;
         }
     }
 
-    fn place_new_fruit(&mut self) -> Option<Location> {
-        let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32)
-            .wrap(self.width, self.height);
-
-        return place_new_fruit(fruit, self.width, self.height, self.snake());
-    }
-
-    fn eat_the_fruit(&mut self) {
-        self.snake[self.snake_size] = self.fruit;
-        self.snake_size += 1;
-    }
-
-    fn snake(&self) -> &[Location] {
-        &self.snake[0..self.snake_size]
-    }
-
-    fn snake_mut(&mut self) -> &mut [Location] {
-        &mut self.snake[0..self.snake_size]
-    }
 }
 
 fn place_new_fruit(
@@ -358,7 +379,7 @@ mod tests {
 
     #[test]
     fn at_the_beginning_snake_is_in_the_middle() {
-        let game = create_game();
+        let mut game = create_game();
 
         let expected = board_layout!(
             "     ",
@@ -368,7 +389,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -385,7 +406,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -403,7 +424,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -423,7 +444,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -441,7 +462,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -461,7 +482,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -479,7 +500,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -492,7 +513,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             " OO  ",
@@ -506,7 +527,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             "OO   ",
@@ -525,7 +546,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             "     ",
@@ -539,7 +560,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             "     ",
@@ -558,7 +579,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             "  O  ",
@@ -572,7 +593,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "  O  ",
             "  O  ",
@@ -598,7 +619,7 @@ mod tests {
             "     "
         );
 
-        assert_board!(&game.board(), &expected);
+        assert_board!(game.board(), &expected);
     }
 
     #[test]
@@ -609,7 +630,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             "     ",
@@ -623,7 +644,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "     ",
             "     ",
@@ -640,7 +661,7 @@ mod tests {
             Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "   ",
             "OO ",
@@ -652,7 +673,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             " F ",
             "OO ",
@@ -664,7 +685,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             " O ",
             "OOF",
@@ -679,7 +700,7 @@ mod tests {
             Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "   ",
             "OO ",
@@ -691,7 +712,7 @@ mod tests {
         game.advance();
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             " F ",
             "OO ",
@@ -705,7 +726,7 @@ mod tests {
         assert_eq!(GameStatus::Lost, game.advance());
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "   ",
             "   ",
@@ -720,7 +741,7 @@ mod tests {
             Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "   ",
             "OO ",
@@ -748,7 +769,7 @@ mod tests {
         assert_eq!(GameStatus::Won, game.advance());
 
         assert_board!(
-            &game.board(),
+            game.board(),
             &board_layout!(
             "OOO",
             "OOO",

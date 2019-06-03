@@ -1,59 +1,10 @@
 use crate::*;
-use generic_array;
+use crate::generic_array_adapter::GenericArrayAdapter;
 use std::fmt::Write;
 
 pub const HEIGHT: usize = 5;
 pub const WIDTH: usize = 5;
 
-pub struct GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
-{
-    data: generic_array::GenericArray<T, S>,
-    pd: std::marker::PhantomData<S>,
-}
-
-impl<T, S> PreallocatedArray<T> for GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
-{
-}
-
-impl<T, S> Default for GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
-{
-    fn default() -> Self {
-        Self {
-            data: generic_array::GenericArray::<T, S>::default(),
-            pd: std::marker::PhantomData::<S> {},
-        }
-    }
-}
-
-impl<T, S> Deref for GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
-{
-    type Target = [T];
-    fn deref(&self) -> &Self::Target {
-        &self.data
-    }
-}
-
-impl<T, S> DerefMut for GenericArrayAdapter<T, S>
-where
-    T: Default + Copy,
-    S: generic_array::ArrayLength<T>,
-{
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.data
-    }
-}
 
 pub type Array5x5<T> = GenericArrayAdapter<T, generic_array::typenum::U25>;
 pub type Array3x3<T> = GenericArrayAdapter<T, generic_array::typenum::U9>;
@@ -139,7 +90,7 @@ pub fn board_to_string(board: &Board) -> String {
     result
 }
 
-pub fn check_board(board: &impl Board, expected: &Vec<String>) -> Vec<String> {
+pub fn check_board(board: &Board, expected: &Vec<String>) -> Vec<String> {
     assert_eq!(board.height(), expected.len(), "Invalid height");
 
     expected
