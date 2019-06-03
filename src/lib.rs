@@ -233,25 +233,25 @@ where
     }
 
     fn move_snake_and_get_status(&mut self) -> GameStatus {
-        let new_head = self.calcualte_new_head_location();
+        match self.calcualte_new_head_location() {
+            new_location if self.fruit == new_location => {
+                self.eat_the_fruit();
 
-        if self.fruit == new_head {
-            self.eat_the_fruit();
-
-            return match self.place_new_fruit() {
-                Some(location) => {
-                    self.fruit = location;
-                    GameStatus::InProgress
+                match self.place_new_fruit() {
+                    Some(location) => {
+                        self.fruit = location;
+                        GameStatus::InProgress
+                    }
+                    None => GameStatus::Won,
                 }
-                None => GameStatus::Won,
-            };
-        } else if self.snake().contains(&new_head) {
-            return GameStatus::Lost;
-        } else {
-            self.move_snake_in_current_direction(new_head);
+            },
+            new_location if self.snake().contains(&new_location) => GameStatus::Lost,
+            new_location => {
+                self.move_snake_in_current_direction(new_location);
+                GameStatus::InProgress
+            }
         }
 
-        GameStatus::InProgress
     }
 
     fn calcualte_new_head_location(&self) -> Location {
