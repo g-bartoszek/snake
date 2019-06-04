@@ -1,13 +1,5 @@
 use crate::*;
-use crate::generic_array_adapter::GenericArrayAdapter;
 use std::fmt::Write;
-
-pub const HEIGHT: usize = 5;
-pub const WIDTH: usize = 5;
-
-
-pub type Array5x5<T> = GenericArrayAdapter<T, generic_array::typenum::U25>;
-pub type Array3x3<T> = GenericArrayAdapter<T, generic_array::typenum::U9>;
 
 pub struct HardcodedNumbersGenerator {
     numbers: [u32; 6],

@@ -1,6 +1,7 @@
 use core::ops::{Deref, DerefMut};
 use derive_new::new;
 
+pub use paste;
 pub mod generic_array_adapter;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -359,6 +360,18 @@ fn place_new_fruit(
     None
 }
 
+#[macro_export]
+macro_rules! crate_game_instance {
+    ($width:expr, $height:expr, $rng:ty) => {
+        paste::expr! {
+            type Width = generic_array::typenum::[<U $width>];
+            type Height = generic_array::typenum::[<U $height>];
+            type Array<T> = generic_array_adapter::GenericArrayAdapter<T, <Width as std::ops::Mul<Height>>::Output>;
+            Game::<Array<Square>, Array<Location>, $rng>::new($width, $height)
+        }
+    };
+}
+
 #[cfg(test)]
 #[rustfmt::skip::macros(board_layout)]
 mod tests {
@@ -368,13 +381,13 @@ mod tests {
     use super::*;
     use test_utils::*;
 
-    fn create_game() -> Game<Array5x5<Square>, Array5x5<Location>, HardcodedNumbersGenerator> {
-        Game::<Array5x5<Square>, Array5x5<Location>, HardcodedNumbersGenerator>::new(WIDTH, HEIGHT)
+    fn create_game() -> impl Snake {
+        crate_game_instance!(5, 5, HardcodedNumbersGenerator)
     }
 
     #[test]
     fn game_is_initialized() {
-        create_game();
+        crate_game_instance!(10, 10, HardcodedNumbersGenerator);
     }
 
     #[test]
@@ -657,8 +670,7 @@ mod tests {
 
     #[test]
     fn when_place_for_fruit_is_taken_first_empty_square_is_used() {
-        let mut game =
-            Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
+        let mut game = crate_game_instance!(3, 3, HardcodedNumbersGenerator);
 
         assert_board!(
             game.board(),
@@ -696,8 +708,7 @@ mod tests {
 
     #[test]
     fn when_snake_bites_itself_the_game_is_lost() {
-        let mut game =
-            Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
+        let mut game = crate_game_instance!(3, 3, HardcodedNumbersGenerator);
 
         assert_board!(
             game.board(),
@@ -737,8 +748,7 @@ mod tests {
 
     #[test]
     fn when_there_is_no_place_for_new_fruit_the_game_is_won() {
-        let mut game =
-            Game::<Array3x3<Square>, Array3x3<Location>, HardcodedNumbersGenerator>::new(3, 3);
+        let mut game = crate_game_instance!(3, 3, HardcodedNumbersGenerator);
 
         assert_board!(
             game.board(),
