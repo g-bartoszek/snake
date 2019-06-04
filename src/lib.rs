@@ -170,7 +170,8 @@ where
     height: usize,
     snake: S,
     snake_size: usize,
-    direction: Direction,
+    current_direction: Direction,
+    next_direction: Direction,
     fruit: Location,
     status: GameStatus,
     rng: R,
@@ -203,7 +204,8 @@ where
             height,
             snake,
             snake_size: 2,
-            direction: Direction::Right,
+            current_direction: Direction::Right,
+            next_direction: Direction::Right,
             fruit: Location::new(0, 0),
             status: GameStatus::InProgress,
             rng: R::default(),
@@ -236,6 +238,8 @@ where
     }
 
     fn move_snake_and_get_status(&mut self) -> GameStatus {
+        self.change_direction();
+
         match self.calcualte_new_head_location() {
             new_location if self.fruit == new_location => {
                 self.eat_the_fruit();
@@ -262,7 +266,7 @@ where
             .snake()
             .last()
             .unwrap()
-            .move_in(self.direction)
+            .move_in(self.current_direction)
             .wrap(self.width, self.height)
     }
 
@@ -272,6 +276,18 @@ where
         }
 
         *self.snake_mut().last_mut().unwrap() = new_head;
+    }
+
+    fn change_direction(&mut self) {
+        if match (self.next_direction, self.current_direction) {
+            (Direction::Left, Direction::Right) => false,
+            (Direction::Right, Direction::Left) => false,
+            (Direction::Up, Direction::Down) => false,
+            (Direction::Down, Direction::Up) => false,
+            (_, _) => true,
+        } {
+            self.current_direction = self.next_direction;
+        }
     }
 
 }
@@ -313,27 +329,19 @@ S: PreallocatedArray<Location>,
     }
 
     fn up(&mut self) {
-        if self.direction != Direction::Down {
-            self.direction = Direction::Up;
-        }
+            self.next_direction = Direction::Up;
     }
 
     fn left(&mut self) {
-        if self.direction != Direction::Right {
-            self.direction = Direction::Left;
-        }
+            self.next_direction = Direction::Left;
     }
 
     fn down(&mut self) {
-        if self.direction != Direction::Up {
-            self.direction = Direction::Down;
-        }
+            self.next_direction = Direction::Down;
     }
 
     fn right(&mut self) {
-        if self.direction != Direction::Left {
-            self.direction = Direction::Right;
-        }
+            self.next_direction = Direction::Right;
     }
 
 }
@@ -582,6 +590,11 @@ mod tests {
             "  O  "
         )
         );
+
+        game.left();
+        game.up();
+        assert_eq!(GameStatus::InProgress, game.advance());
+
     }
 
     #[test]
