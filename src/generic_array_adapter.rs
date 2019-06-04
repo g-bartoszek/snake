@@ -1,4 +1,5 @@
-use crate::*;
+use crate::PreallocatedArray;
+use core::ops::{Deref, DerefMut};
 use generic_array;
 
 pub struct GenericArrayAdapter<T, S>
@@ -7,7 +8,7 @@ where
     S: generic_array::ArrayLength<T>,
 {
     data: generic_array::GenericArray<T, S>,
-    pd: std::marker::PhantomData<S>,
+    pd: core::marker::PhantomData<S>,
 }
 
 impl<T, S> PreallocatedArray<T> for GenericArrayAdapter<T, S>
@@ -25,7 +26,7 @@ where
     fn default() -> Self {
         Self {
             data: generic_array::GenericArray::<T, S>::default(),
-            pd: std::marker::PhantomData::<S> {},
+            pd: core::marker::PhantomData::<S> {},
         }
     }
 }
