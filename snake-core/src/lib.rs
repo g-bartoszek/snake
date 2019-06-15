@@ -111,12 +111,12 @@ pub trait PreallocatedArray<T>: Default + Deref<Target = [T]> + DerefMut<Target 
 pub trait Board {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
-    fn at(&self, location: &Location) -> Square;
+    fn at(&self, location: Location) -> Square;
     fn at_mut(&mut self, location: &Location) -> &mut Square;
 }
 
 pub trait Snake {
-    fn board(&mut self) -> &Board;
+    fn board(&mut self) -> &dyn Board;
     fn advance(&mut self) -> GameStatus;
     fn up(&mut self);
     fn left(&mut self);
@@ -156,7 +156,7 @@ where
     fn height(&self) -> usize {
         self.height
     }
-    fn at(&self, location: &Location) -> Square {
+    fn at(&self, location: Location) -> Square {
         self.data[location.y as usize * self.width + location.x as usize]
     }
     fn at_mut(&mut self, location: &Location) -> &mut Square {
@@ -225,7 +225,7 @@ where
         let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32)
             .wrap(self.width, self.height);
 
-        return place_new_fruit(fruit, self.width, self.height, self.snake());
+        place_new_fruit(fruit, self.width, self.height, self.snake())
     }
 
     fn eat_the_fruit(&mut self) {
@@ -302,7 +302,7 @@ B: PreallocatedArray<Square>,
 S: PreallocatedArray<Location>,
     R: RandomNumberGenerator,
     {
-    fn board(&mut self) -> &Board {
+    fn board(&mut self) -> &dyn Board {
         let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
 
         match self.status {

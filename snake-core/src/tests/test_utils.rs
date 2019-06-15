@@ -53,7 +53,7 @@ macro_rules! assert_board {
 pub fn expected_to_string(expected: &Vec<String>) -> String {
     let mut result = String::new();
     for e in expected {
-        write!(result, "\"{}\"\n", e).unwrap();
+        writeln!(result, "\"{}\"", e).unwrap();
     }
     result
 }
@@ -77,7 +77,7 @@ pub fn board_to_string(board: &Board) -> String {
             )
             .unwrap();
         }
-        write!(result, "\"\n").unwrap();
+        writeln!(result, "\"").unwrap();
     }
     result
 }
