@@ -58,7 +58,7 @@ pub fn expected_to_string(expected: &Vec<String>) -> String {
     result
 }
 
-pub fn board_to_string(board: &Board) -> String {
+pub fn board_to_string(board: &dyn Board) -> String {
     let mut result = String::new();
     for y in 0..board.height() {
         write!(result, "\"").unwrap();
@@ -66,7 +66,7 @@ pub fn board_to_string(board: &Board) -> String {
             write!(
                 result,
                 "{}",
-                match board.at(&Location {
+                match board.at(Location {
                     x: x as i32,
                     y: y as i32
                 }) {
@@ -82,7 +82,7 @@ pub fn board_to_string(board: &Board) -> String {
     result
 }
 
-pub fn check_board(board: &Board, expected: &Vec<String>) -> Vec<String> {
+pub fn check_board(board: &dyn Board, expected: &Vec<String>) -> Vec<String> {
     assert_eq!(board.height(), expected.len(), "Invalid height");
 
     expected
@@ -100,7 +100,7 @@ pub fn check_board(board: &Board, expected: &Vec<String>) -> Vec<String> {
                         _ => Square::Empty,
                     };
 
-                    if board.at(&Location {
+                    if board.at(Location {
                         x: x as i32,
                         y: y as i32,
                     }) != expected
@@ -110,7 +110,7 @@ pub fn check_board(board: &Board, expected: &Vec<String>) -> Vec<String> {
                             x,
                             y,
                             expected,
-                            board.at(&Location {
+                            board.at(Location {
                                 x: x as i32,
                                 y: y as i32
                             })

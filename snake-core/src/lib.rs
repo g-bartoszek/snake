@@ -1,10 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use core::ops::{Deref, DerefMut};
+use core::ops::{DerefMut};
 use derive_new::new;
 
 pub use paste;
-pub mod generic_array_adapter;
 pub use generic_array;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -106,8 +105,6 @@ pub enum Direction {
     Right,
 }
 
-pub trait PreallocatedArray<T>: Default + Deref<Target = [T]> + DerefMut<Target = [T]> {}
-
 pub trait Board {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
@@ -126,7 +123,7 @@ pub trait Snake {
 
 pub struct FixedSizeBoard<T>
 where
-    T: PreallocatedArray<Square>,
+    T: Default + DerefMut<Target = [Square]>
 {
     data: T,
     width: usize,
@@ -135,7 +132,7 @@ where
 
 impl<T> FixedSizeBoard<T>
 where
-    T: PreallocatedArray<Square>,
+    T: Default  + DerefMut<Target = [Square]>,
 {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
@@ -148,7 +145,7 @@ where
 
 impl<T> Board for FixedSizeBoard<T>
 where
-    T: PreallocatedArray<Square>,
+    T: Default + DerefMut<Target = [Square]>,
 {
     fn width(&self) -> usize {
         self.width
@@ -166,8 +163,8 @@ where
 
 pub struct Game<B, S, R>
 where
-    B: PreallocatedArray<Square>,
-    S: PreallocatedArray<Location>,
+    B: Default + DerefMut<Target = [Square]>,
+    S: Default + DerefMut<Target = [Location]>,
     R: RandomNumberGenerator,
 {
     width: usize,
@@ -188,8 +185,8 @@ pub trait RandomNumberGenerator: Default {
 
 impl<B, S, R> Game<B, S, R>
 where
-    B: PreallocatedArray<Square>,
-    S: PreallocatedArray<Location>,
+    B: Default + DerefMut<Target = [Square]>,
+    S: Default + DerefMut<Target = [Location]>,
     R: RandomNumberGenerator,
 {
     pub fn new(width: usize, height: usize) -> Game<B, S, R> {
@@ -298,8 +295,8 @@ where
 
 impl<B, S, R> Snake for Game<B, S, R>
 where
-B: PreallocatedArray<Square>,
-S: PreallocatedArray<Location>,
+B: Default  + DerefMut<Target = [Square]>,
+S: Default  + DerefMut<Target = [Location]>,
     R: RandomNumberGenerator,
     {
     fn board(&mut self) -> &dyn Board {
@@ -378,7 +375,8 @@ macro_rules! create_game_instance {
         paste::expr! {
             type Width = generic_array::typenum::[<U $width>];
             type Height = generic_array::typenum::[<U $height>];
-            type Array<T> = generic_array_adapter::GenericArrayAdapter<T, <Width as core::ops::Mul<Height>>::Output>;
+            type Array<T> = generic_array::GenericArray<T, <Width as core::ops::Mul<Height>>::Output>;
+
             Game::<Array<Square>, Array<Location>, $rng>::new($width, $height)
         }
     };
