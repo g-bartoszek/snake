@@ -50,7 +50,7 @@ fn main() {
                         for x in 0..board.width() {
                             p.print(
                                 (x, y),
-                                match board.at(&snake::Location {
+                                match board.at(snake::Location {
                                     x: x as i32,
                                     y: y as i32,
                                 }) {
