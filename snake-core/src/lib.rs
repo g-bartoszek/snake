@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use core::ops::{DerefMut};
-use derive_new::new;
+use core::convert::TryFrom;
+use core::ops::DerefMut;
 
-pub use paste;
 pub use generic_array;
+pub use paste;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Square {
@@ -26,13 +26,23 @@ impl Default for Square {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug, Default, new)]
+#[derive(PartialEq, Copy, Clone, Debug, Default)]
 pub struct Location {
     pub x: i32,
     pub y: i32,
 }
 
 impl Location {
+    pub fn new<T>(x: T, y: T) -> Location
+    where
+        i32: TryFrom<T>,
+    {
+        Location {
+            x: i32::try_from(x).ok().unwrap(),
+            y: i32::try_from(y).ok().unwrap(),
+        }
+    }
+
     ///
     /// ```
     /// use self::snake::{Location, Direction};
@@ -96,7 +106,6 @@ impl Location {
     }
 }
 
-
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum Direction {
     Up,
@@ -121,12 +130,12 @@ pub trait Snake {
     fn right(&mut self);
 }
 
-pub trait FixedSizedArray<T> : Default + DerefMut<Target = [T]> {}
+pub trait FixedSizedArray<T>: Default + DerefMut<Target = [T]> {}
 impl<T, A> FixedSizedArray<T> for A where A: Default + DerefMut<Target = [T]> {}
 
 pub struct FixedSizeBoard<T>
 where
-    T: FixedSizedArray<Square>
+    T: FixedSizedArray<Square>,
 {
     data: T,
     width: usize,
@@ -135,7 +144,7 @@ where
 
 impl<T> FixedSizeBoard<T>
 where
-    T: FixedSizedArray<Square>
+    T: FixedSizedArray<Square>,
 {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
@@ -148,7 +157,7 @@ where
 
 impl<T> Board for FixedSizeBoard<T>
 where
-    T: FixedSizedArray<Square>
+    T: FixedSizedArray<Square>,
 {
     fn width(&self) -> usize {
         self.width
@@ -179,7 +188,7 @@ where
     fruit: Location,
     status: GameStatus,
     rng: R,
-    board: FixedSizeBoard<B>
+    board: FixedSizeBoard<B>,
 }
 
 pub trait RandomNumberGenerator: Default {
@@ -213,7 +222,7 @@ where
             fruit: Location::new(0, 0),
             status: GameStatus::InProgress,
             rng: R::default(),
-            board: FixedSizeBoard::<B>::new(width, height)
+            board: FixedSizeBoard::<B>::new(width, height),
         };
 
         game.fruit = game.place_new_fruit().unwrap();
@@ -222,8 +231,7 @@ where
     }
 
     fn place_new_fruit(&mut self) -> Option<Location> {
-        let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32)
-            .wrap(self.width, self.height);
+        let fruit = Location::new(self.rng.next() as i32, self.rng.next() as i32).wrap(self.width, self.height);
 
         place_new_fruit(fruit, self.width, self.height, self.snake())
     }
@@ -255,19 +263,17 @@ where
                     }
                     None => GameStatus::Won,
                 }
-            },
+            }
             new_location if self.snake().contains(&new_location) => GameStatus::Lost,
             new_location => {
                 self.move_snake_in_current_direction(new_location);
                 GameStatus::InProgress
             }
         }
-
     }
 
     fn calcualte_new_head_location(&self) -> Location {
-        self
-            .snake()
+        self.snake()
             .last()
             .unwrap()
             .move_in(self.current_direction)
@@ -293,7 +299,6 @@ where
             self.current_direction = self.next_direction;
         }
     }
-
 }
 
 impl<B, S, R> Snake for Game<B, S, R>
@@ -301,7 +306,7 @@ where
     B: FixedSizedArray<Square>,
     S: FixedSizedArray<Location>,
     R: RandomNumberGenerator,
-    {
+{
     fn board(&mut self) -> &dyn Board {
         let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
 
@@ -333,21 +338,20 @@ where
     }
 
     fn up(&mut self) {
-            self.next_direction = Direction::Up;
+        self.next_direction = Direction::Up;
     }
 
     fn left(&mut self) {
-            self.next_direction = Direction::Left;
+        self.next_direction = Direction::Left;
     }
 
     fn down(&mut self) {
-            self.next_direction = Direction::Down;
+        self.next_direction = Direction::Down;
     }
 
     fn right(&mut self) {
-            self.next_direction = Direction::Right;
+        self.next_direction = Direction::Right;
     }
-
 }
 
 fn place_new_fruit(
@@ -358,11 +362,7 @@ fn place_new_fruit(
 ) -> Option<Location> {
     for y in 0..height {
         for x in 0..width {
-            let l = Location {
-                x: expected.x + x as i32,
-                y: expected.y + y as i32,
-            }
-            .wrap(width, height);
+            let l = Location::new(expected.x + x as i32, expected.y + y as i32).wrap(width, height);
             if !taken.contains(&l) {
                 return Some(l);
             }
@@ -371,7 +371,6 @@ fn place_new_fruit(
 
     None
 }
-
 
 #[macro_export]
 macro_rules! create_game_instance {
@@ -601,7 +600,6 @@ mod tests {
         game.left();
         game.up();
         assert_eq!(GameStatus::InProgress, game.advance());
-
     }
 
     #[test]

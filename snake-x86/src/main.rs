@@ -2,7 +2,7 @@ use rand;
 use snake::*;
 
 use cursive::traits::*;
-use cursive::views::{Canvas,  OnEventView };
+use cursive::views::{Canvas, OnEventView};
 use cursive::Cursive;
 
 use std::thread;
@@ -16,9 +16,10 @@ impl snake::RandomNumberGenerator for RNG {
     }
 }
 
-
 fn main() {
-    let game = std::sync::Arc::new(std::sync::Mutex::new(snake::create_game_instance!(20, 20, RNG)));
+    let game = std::sync::Arc::new(std::sync::Mutex::new(snake::create_game_instance!(
+        20, 20, RNG
+    )));
     let mut siv = Cursive::default();
 
     siv.add_global_callback('q', |s| s.quit());
@@ -50,10 +51,7 @@ fn main() {
                         for x in 0..board.width() {
                             p.print(
                                 (x, y),
-                                match board.at(snake::Location {
-                                    x: x as i32,
-                                    y: y as i32,
-                                }) {
+                                match board.at(snake::Location::new(x, y)) {
                                     snake::Square::Snake => "O",
                                     snake::Square::Fruit => "F",
                                     snake::Square::Empty => " ",
