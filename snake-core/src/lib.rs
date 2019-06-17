@@ -121,9 +121,12 @@ pub trait Snake {
     fn right(&mut self);
 }
 
+pub trait FixedSizedArray<T> : Default + DerefMut<Target = [T]> {}
+impl<T, A> FixedSizedArray<T> for A where A: Default + DerefMut<Target = [T]> {}
+
 pub struct FixedSizeBoard<T>
 where
-    T: Default + DerefMut<Target = [Square]>
+    T: FixedSizedArray<Square>
 {
     data: T,
     width: usize,
@@ -132,7 +135,7 @@ where
 
 impl<T> FixedSizeBoard<T>
 where
-    T: Default  + DerefMut<Target = [Square]>,
+    T: FixedSizedArray<Square>
 {
     pub fn new(width: usize, height: usize) -> Self {
         Self {
@@ -145,7 +148,7 @@ where
 
 impl<T> Board for FixedSizeBoard<T>
 where
-    T: Default + DerefMut<Target = [Square]>,
+    T: FixedSizedArray<Square>
 {
     fn width(&self) -> usize {
         self.width
@@ -163,8 +166,8 @@ where
 
 pub struct Game<B, S, R>
 where
-    B: Default + DerefMut<Target = [Square]>,
-    S: Default + DerefMut<Target = [Location]>,
+    B: FixedSizedArray<Square>,
+    S: FixedSizedArray<Location>,
     R: RandomNumberGenerator,
 {
     width: usize,
@@ -185,8 +188,8 @@ pub trait RandomNumberGenerator: Default {
 
 impl<B, S, R> Game<B, S, R>
 where
-    B: Default + DerefMut<Target = [Square]>,
-    S: Default + DerefMut<Target = [Location]>,
+    B: FixedSizedArray<Square>,
+    S: FixedSizedArray<Location>,
     R: RandomNumberGenerator,
 {
     pub fn new(width: usize, height: usize) -> Game<B, S, R> {
@@ -295,8 +298,8 @@ where
 
 impl<B, S, R> Snake for Game<B, S, R>
 where
-B: Default  + DerefMut<Target = [Square]>,
-S: Default  + DerefMut<Target = [Location]>,
+    B: FixedSizedArray<Square>,
+    S: FixedSizedArray<Location>,
     R: RandomNumberGenerator,
     {
     fn board(&mut self) -> &dyn Board {
@@ -368,6 +371,7 @@ fn place_new_fruit(
 
     None
 }
+
 
 #[macro_export]
 macro_rules! create_game_instance {
