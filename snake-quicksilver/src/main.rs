@@ -26,12 +26,16 @@ impl State for DrawGeometry {
 
     fn event(&mut self, event: &Event, _window: &mut Window) -> Result<()> {
 
-        match event {
-            Event::Key(Key::Left, ButtonState::Pressed) => self.0.left(),
-            Event::Key(Key::Right, ButtonState::Pressed) => self.0.right(),
-            Event::Key(Key::Up, ButtonState::Pressed) => self.0.up(),
-            Event::Key(Key::Down, ButtonState::Pressed) => self.0.down(),
-            _ => {}
+        let direction = match event {
+            Event::Key(Key::Left, ButtonState::Pressed) => Some(Direction::Left),
+            Event::Key(Key::Right, ButtonState::Pressed) => Some(Direction::Right),
+            Event::Key(Key::Up, ButtonState::Pressed) => Some(Direction::Up),
+            Event::Key(Key::Down, ButtonState::Pressed) => Some(Direction::Down),
+            _ => None
+        };
+
+        if let Some(d) = direction {
+            self.0.set_direction(d);
         }
 
         Ok(())

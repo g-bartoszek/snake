@@ -125,10 +125,7 @@ pub trait Board {
 pub trait Snake {
     fn board(&mut self) -> &dyn Board;
     fn advance(&mut self) -> GameStatus;
-    fn up(&mut self);
-    fn left(&mut self);
-    fn down(&mut self);
-    fn right(&mut self);
+    fn set_direction(&mut self, direction: Direction);
 }
 
 pub trait FixedSizedArray<T>: Default + DerefMut<Target = [T]> {}
@@ -370,20 +367,8 @@ where
         self.status
     }
 
-    fn up(&mut self) {
-        self.next_direction = Direction::Up;
-    }
-
-    fn left(&mut self) {
-        self.next_direction = Direction::Left;
-    }
-
-    fn down(&mut self) {
-        self.next_direction = Direction::Down;
-    }
-
-    fn right(&mut self) {
-        self.next_direction = Direction::Right;
+    fn set_direction(&mut self, direction: Direction) {
+        self.next_direction = direction;
     }
 }
 
@@ -473,7 +458,7 @@ mod tests {
     fn snake_turns_up() {
         let mut game = create_game();
 
-        game.up();
+        game.set_direction(Direction::Up);
         game.advance();
 
         let expected = board_layout!(
@@ -491,9 +476,9 @@ mod tests {
     fn snake_turns_left() {
         let mut game = create_game();
 
-        game.up();
+        game.set_direction(Direction::Up);
         game.advance();
-        game.left();
+        game.set_direction(Direction::Left);
         game.advance();
 
         let expected = board_layout!(
@@ -511,7 +496,7 @@ mod tests {
     fn snake_turns_down() {
         let mut game = create_game();
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         let expected = board_layout!(
@@ -529,9 +514,9 @@ mod tests {
     fn snake_turns_right() {
         let mut game = create_game();
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
-        game.right();
+        game.set_direction(Direction::Right);
         game.advance();
 
         let expected = board_layout!(
@@ -549,7 +534,7 @@ mod tests {
     fn snake_cant_turn_left_when_its_moving_right() {
         let mut game = create_game();
 
-        game.left();
+        game.set_direction(Direction::Left);
         game.advance();
 
         let expected = board_layout!(
@@ -567,9 +552,9 @@ mod tests {
     fn snake_cant_turn_right_when_its_moving_left() {
         let mut game = create_game();
 
-        game.up();
+        game.set_direction(Direction::Up);
         game.advance();
-        game.left();
+        game.set_direction(Direction::Left);
         game.advance();
 
         assert_board!(
@@ -583,7 +568,7 @@ mod tests {
         )
         );
 
-        game.right();
+        game.set_direction(Direction::Right);
         game.advance();
 
         assert_board!(
@@ -602,7 +587,7 @@ mod tests {
     fn snake_cant_turn_up_when_its_moving_down() {
         let mut game = create_game();
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         assert_board!(
@@ -616,7 +601,7 @@ mod tests {
         )
         );
 
-        game.up();
+        game.set_direction(Direction::Up);
         game.advance();
 
         assert_board!(
@@ -630,8 +615,8 @@ mod tests {
         )
         );
 
-        game.left();
-        game.up();
+        game.set_direction(Direction::Left);
+        game.set_direction(Direction::Up);
         assert_eq!(GameStatus::InProgress, game.advance());
     }
 
@@ -639,7 +624,7 @@ mod tests {
     fn snake_cant_turn_down_when_its_moving_up() {
         let mut game = create_game();
 
-        game.up();
+        game.set_direction(Direction::Up);
         game.advance();
 
         assert_board!(
@@ -653,7 +638,7 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         assert_board!(
@@ -704,7 +689,7 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         assert_board!(
@@ -732,7 +717,7 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         assert_board!(
@@ -744,7 +729,7 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         assert_board!(
@@ -770,7 +755,7 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
 
         assert_board!(
@@ -782,7 +767,7 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         assert_eq!(GameStatus::InProgress, game.advance());
         assert_eq!(GameStatus::Lost, game.advance());
         assert_eq!(GameStatus::Lost, game.advance());
@@ -810,22 +795,22 @@ mod tests {
         )
         );
 
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
         game.advance();
-        game.right();
+        game.set_direction(Direction::Right);
         game.advance();
-        game.down();
-        game.advance();
-        game.advance();
-        game.right();
-        game.advance();
-        game.down();
+        game.set_direction(Direction::Down);
         game.advance();
         game.advance();
-        game.right();
+        game.set_direction(Direction::Right);
         game.advance();
-        game.down();
+        game.set_direction(Direction::Down);
+        game.advance();
+        game.advance();
+        game.set_direction(Direction::Right);
+        game.advance();
+        game.set_direction(Direction::Down);
         assert_eq!(GameStatus::Won, game.advance());
         assert_eq!(GameStatus::Won, game.advance());
 

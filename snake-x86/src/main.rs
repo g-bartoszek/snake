@@ -25,19 +25,19 @@ fn main() {
     siv.add_global_callback('q', |s| s.quit());
     siv.add_global_callback(cursive::event::Key::Left, {
         let g = game.clone();
-        move |_| g.lock().unwrap().left()
+        move |_| g.lock().unwrap().set_direction(Direction::Left)
     });
     siv.add_global_callback(cursive::event::Key::Up, {
         let g = game.clone();
-        move |_| g.lock().unwrap().up()
+        move |_| g.lock().unwrap().set_direction(Direction::Up)
     });
     siv.add_global_callback(cursive::event::Key::Down, {
         let g = game.clone();
-        move |_| g.lock().unwrap().down()
+        move |_| g.lock().unwrap().set_direction(Direction::Down)
     });
     siv.add_global_callback(cursive::event::Key::Right, {
         let g = game.clone();
-        move |_| g.lock().unwrap().right()
+        move |_| g.lock().unwrap().set_direction(Direction::Right)
     });
 
     siv.add_layer(OnEventView::new(
