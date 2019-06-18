@@ -40,17 +40,13 @@ impl State for DrawGeometry {
     fn draw(&mut self, window: &mut Window) -> Result<()> {
         window.clear(Color::WHITE)?;
 
-        let board = self.0.board();
-        for y in 0..board.height() {
-            for x in 0..board.width() {
-                match board.at(snake::Location::new(x, y)) {
-                    snake::Square::Snake => window.draw(&Rectangle::new(((x * 20) as i32, (y * 20) as i32), (20, 20)), Col(Color::BLUE)),
-                    snake::Square::Fruit => window.draw(&Rectangle::new(((x * 20) as i32, (y * 20) as i32), (20, 20)), Col(Color::GREEN)),
-                    snake::Square::Empty => {},
-                }
+        for (Location{x, y}, s ) in self.0.board().iter() {
+            match s {
+                snake::Square::Snake => window.draw(&Rectangle::new(((x * 20) as i32, (y * 20) as i32), (20, 20)), Col(Color::BLUE)),
+                snake::Square::Fruit => window.draw(&Rectangle::new(((x * 20) as i32, (y * 20) as i32), (20, 20)), Col(Color::GREEN)),
+                snake::Square::Empty => {},
             }
         }
-
         Ok(())
     }
 }

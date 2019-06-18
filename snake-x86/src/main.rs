@@ -46,18 +46,15 @@ fn main() {
                 let g = game.clone();
                 move |_, p| {
                     let mut game = g.lock().unwrap();
-                    let board = game.board();
-                    for y in 0..board.height() {
-                        for x in 0..board.width() {
-                            p.print(
-                                (x, y),
-                                match board.at(snake::Location::new(x, y)) {
-                                    snake::Square::Snake => "O",
-                                    snake::Square::Fruit => "F",
-                                    snake::Square::Empty => " ",
-                                },
-                            );
-                        }
+                    for (Location{x, y}, s ) in game.board().iter() {
+                        p.print(
+                            (x, y),
+                            match s {
+                                snake::Square::Snake => "O",
+                                snake::Square::Fruit => "F",
+                                snake::Square::Empty => " ",
+                            },
+                        );
                     }
                 }
             })

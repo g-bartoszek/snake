@@ -119,6 +119,7 @@ pub trait Board {
     fn height(&self) -> usize;
     fn at(&self, location: Location) -> Square;
     fn at_mut(&mut self, location: &Location) -> &mut Square;
+    fn iter(&self) -> BoardIterator;
 }
 
 pub trait Snake {
@@ -153,6 +154,7 @@ where
             height,
         }
     }
+
 }
 
 impl<T> Board for FixedSizeBoard<T>
@@ -170,6 +172,37 @@ where
     }
     fn at_mut(&mut self, location: &Location) -> &mut Square {
         &mut self.data[location.y as usize * self.width + location.x as usize]
+    }
+    fn iter<'a>(&'a self) -> BoardIterator<'a> {
+        BoardIterator::<'a> {
+            board: self,
+            location: Location::new(0, 0)
+        }
+    }
+}
+
+pub struct BoardIterator<'a> {
+    board: &'a dyn Board,
+    location: Location
+}
+
+impl<'a> Iterator for BoardIterator<'a> {
+    type Item = (Location, Square);
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.location.y == self.board.height() as i32 {
+            return None;
+        }
+
+        let result = (self.location, self.board.at(self.location));
+
+        self.location.x += 1;
+
+        if self.location.x == self.board.width() as i32 {
+            self.location.x = 0;
+            self.location.y += 1;
+        }
+
+        Some(result)
     }
 }
 
