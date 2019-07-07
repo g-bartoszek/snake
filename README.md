@@ -1,7 +1,7 @@
 Simple snake game in 3 versions:
-* STM32F4DISCOVERY 
+* STM32F4DISCOVERY   
   ![STM screenshot](/images/stm.png)
-* Text based UI 
+* Text based UI   
   ![Terminal screenshot](/images/cursive.png)
-* Quicksilver based UI 
+* Quicksilver based UI    
   ![Browser screenshot](/images/quicksilver.png)
