@@ -3,9 +3,24 @@ use embedded_graphics::prelude::*;
 use snake::*;
 use ssd1331::interface::DisplayInterface;
 use ssd1331::prelude::*;
+use core::borrow::BorrowMut;
 
 pub fn draw_rust_logo(disp: &mut GraphicsMode<impl DisplayInterface>) {
-    let im = Image16BPP::new(include_bytes!("../rust_mini.raw"), 64, 64)
+    let mut bytes : [u8; 64 * 64 * 2] = [0; 64 * 64 * 2];
+    include_bytes!("../rust_mini.raw")
+        .chunks(2)
+        .into_iter()
+        .zip(bytes
+            .chunks_mut(2)
+            .into_iter()
+            .rev())
+        .borrow_mut()
+        .for_each(| (s, t) | {
+       t[0] = s[0];
+       t[1] = s[1];
+    });
+
+    let im = Image16BPP::new(&bytes, 64, 64)
         .translate(Coord::new((96 - 64) / 2, 0));
 
     disp.draw(im.into_iter());

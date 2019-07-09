@@ -7,23 +7,25 @@ pub use generic_array;
 pub use paste;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
-pub enum Square {
-    Fruit,
-    Empty,
-    Snake,
+pub enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
-pub enum GameStatus {
-    InProgress,
-    Lost,
-    Won,
+pub trait Board {
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+    fn at(&self, location: Location) -> Square;
+    fn at_mut(&mut self, location: &Location) -> &mut Square;
+    fn iter(&self) -> BoardIterator;
 }
 
-impl Default for Square {
-    fn default() -> Self {
-        Square::Empty
-    }
+pub trait Snake {
+    fn board(&mut self) -> &dyn Board;
+    fn advance(&mut self) -> GameStatus;
+    fn set_direction(&mut self, direction: Direction);
 }
 
 #[derive(PartialEq, Copy, Clone, Debug, Default)]
@@ -34,8 +36,8 @@ pub struct Location {
 
 impl Location {
     pub fn new<T>(x: T, y: T) -> Location
-    where
-        i32: TryFrom<T>,
+        where
+            i32: TryFrom<T>,
     {
         Location {
             x: i32::try_from(x).ok().unwrap(),
@@ -107,26 +109,25 @@ impl Location {
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
-pub enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
+pub enum Square {
+    Fruit,
+    Empty,
+    Snake,
 }
 
-pub trait Board {
-    fn width(&self) -> usize;
-    fn height(&self) -> usize;
-    fn at(&self, location: Location) -> Square;
-    fn at_mut(&mut self, location: &Location) -> &mut Square;
-    fn iter(&self) -> BoardIterator;
+#[derive(PartialEq, Copy, Clone, Debug)]
+pub enum GameStatus {
+    InProgress,
+    Lost,
+    Won,
 }
 
-pub trait Snake {
-    fn board(&mut self) -> &dyn Board;
-    fn advance(&mut self) -> GameStatus;
-    fn set_direction(&mut self, direction: Direction);
+impl Default for Square {
+    fn default() -> Self {
+        Square::Empty
+    }
 }
+
 
 pub trait FixedSizedArray<T>: Default + DerefMut<Target = [T]> {}
 impl<T, A> FixedSizedArray<T> for A where A: Default + DerefMut<Target = [T]> {}

@@ -87,9 +87,6 @@ pub fn init() -> (Delay, GraphicsMode<impl DisplayInterface>) {
     let gpioa = dp.GPIOA.split();
     let gpiob = dp.GPIOB.split();
 
-    let mut nss = gpioa.pa4.into_push_pull_output();
-    nss.set_high();
-
     let sck = gpioa.pa5.into_alternate_af5();
     let miso = gpioa.pa6.into_alternate_af5();
     let mosi = gpioa.pa7.into_alternate_af5();
@@ -156,7 +153,7 @@ pub fn init() -> (Delay, GraphicsMode<impl DisplayInterface>) {
 
 pub fn init_game(display: &mut GraphicsMode<impl DisplayInterface>, delay: &mut Delay) {
     display::draw_rust_logo(display);
-    delay.delay_ms(1000_u16);
+    delay.delay_ms(3000_u16);
     free(|cs| {
         MUTEX_GAME
             .borrow(cs)
