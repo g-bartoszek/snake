@@ -1,9 +1,7 @@
-use rand;
-
 use cursive::traits::*;
 use cursive::views::{Canvas, OnEventView};
 use cursive::{Cursive, CursiveExt};
-use snake::{generic_array, Direction, Game, Location, Snake, Square};
+use snake::{Direction, Game, Location, Snake};
 
 use std::thread;
 
@@ -17,9 +15,9 @@ impl snake::RandomNumberGenerator for RNG {
 }
 
 fn main() {
-    let game = std::sync::Arc::new(std::sync::Mutex::new(snake::create_game_instance!(
-        20, 20, RNG
-    )));
+    let game = std::sync::Arc::new(std::sync::Mutex::new(
+        Game::<{ 20 * 20 }, RNG>::new(20, 20),
+    ));
     let mut siv = Cursive::default();
 
     siv.add_global_callback('q', |s| s.quit());

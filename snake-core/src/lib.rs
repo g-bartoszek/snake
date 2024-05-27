@@ -3,7 +3,6 @@
 use core::convert::TryFrom;
 use core::ops::DerefMut;
 
-pub use generic_array;
 pub use paste;
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -132,22 +131,19 @@ impl Default for Square {
 pub trait FixedSizedArray<T>: Default + DerefMut<Target = [T]> {}
 impl<T, A> FixedSizedArray<T> for A where A: Default + DerefMut<Target = [T]> {}
 
-pub struct FixedSizeBoard<T>
-where
-    T: FixedSizedArray<Square>,
+pub struct FixedSizeBoard<const SIZE: usize>
 {
-    data: T,
+    data: [Square; SIZE],
     width: usize,
     height: usize,
 }
 
-impl<T> FixedSizeBoard<T>
-where
-    T: FixedSizedArray<Square>,
+impl<const SIZE: usize> FixedSizeBoard<SIZE>
 {
     pub fn new(width: usize, height: usize) -> Self {
+        assert_eq!(SIZE, width * height);
         Self {
-            data: T::default(),
+            data: [Square::default(); SIZE],
             width,
             height,
         }
@@ -155,9 +151,7 @@ where
 
 }
 
-impl<T> Board for FixedSizeBoard<T>
-where
-    T: FixedSizedArray<Square>,
+impl<const SIZE: usize> Board for FixedSizeBoard<SIZE>
 {
     fn width(&self) -> usize {
         self.width
@@ -204,42 +198,37 @@ impl<'a> Iterator for BoardIterator<'a> {
     }
 }
 
-pub struct Game<B, S, R>
+pub struct Game<const SIZE: usize, R>
 where
-    B: FixedSizedArray<Square>,
-    S: FixedSizedArray<Location>,
     R: RandomNumberGenerator,
 {
     width: usize,
     height: usize,
-    snake: S,
+    snake: [Location; SIZE],
     snake_size: usize,
     current_direction: Direction,
     next_direction: Direction,
     fruit: Location,
     status: GameStatus,
     rng: R,
-    board: FixedSizeBoard<B>,
+    board: FixedSizeBoard<SIZE>,
 }
 
 pub trait RandomNumberGenerator: Default {
     fn next(&mut self) -> u32;
 }
 
-impl<B, S, R> Game<B, S, R>
+impl<const SIZE: usize, R> Game<SIZE, R>
 where
-    B: FixedSizedArray<Square>,
-    S: FixedSizedArray<Location>,
     R: RandomNumberGenerator,
 {
-    pub fn new(width: usize, height: usize) -> Game<B, S, R> {
-        assert_eq!(S::default().len(), width * height);
-        assert_eq!(B::default().len(), width * height);
+    pub fn new(width: usize, height: usize) -> Game<SIZE, R> {
+        assert_eq!(SIZE, width * height);
 
         let center_x = (width / 2) as i32;
         let center_y = (height / 2) as i32;
 
-        let mut snake = S::default();
+        let mut snake = [Location::default(); SIZE];
         snake[1] = Location::new(center_x, center_y);
         snake[0] = Location::new(center_x - 1, center_y);
 
@@ -253,7 +242,7 @@ where
             fruit: Location::new(0, 0),
             status: GameStatus::InProgress,
             rng: R::default(),
-            board: FixedSizeBoard::<B>::new(width, height),
+            board: FixedSizeBoard::<SIZE>::new(width, height),
         };
 
         game.fruit = game.place_new_fruit().unwrap();
@@ -332,14 +321,10 @@ where
     }
 }
 
-impl<B, S, R> Snake for Game<B, S, R>
-where
-    B: FixedSizedArray<Square>,
-    S: FixedSizedArray<Location>,
-    R: RandomNumberGenerator,
+impl<const SIZE: usize, R: RandomNumberGenerator> Snake for Game<SIZE, R>
 {
     fn board(&mut self) -> &dyn Board {
-        let mut board = FixedSizeBoard::<B>::new(self.width, self.height);
+        let mut board = FixedSizeBoard::<SIZE>::new(self.width, self.height);
 
         match self.status {
             GameStatus::InProgress => {
@@ -391,20 +376,7 @@ fn place_new_fruit(
     None
 }
 
-#[macro_export]
-macro_rules! create_game_instance {
-    ($width:expr, $height:expr, $rng:ty) => {{
-        paste::expr! {
-            type Width = generic_array::typenum::[<U $width>];
-            type Height = generic_array::typenum::[<U $height>];
-            type Array<T> = generic_array::GenericArray<T, <Width as core::ops::Mul<Height>>::Output>;
-
-            Game::<Array<Square>, Array<Location>, $rng>::new($width, $height)
-        }
-    }};
-}
-
-#[cfg(feature = "std")]
+#[cfg(feature= "std")]
 #[cfg(test)]
 #[rustfmt::skip::macros(board_layout)]
 mod tests {
@@ -415,12 +387,12 @@ mod tests {
     use test_utils::*;
 
     fn create_game() -> impl Snake {
-        create_game_instance!(5, 5, HardcodedNumbersGenerator)
+        Game::<{5 * 5}, HardcodedNumbersGenerator>::new(5, 5)
     }
 
     #[test]
     fn game_is_initialized() {
-        create_game_instance!(10, 10, HardcodedNumbersGenerator);
+        Game::<{5 * 5}, HardcodedNumbersGenerator>::new(5, 5);
     }
 
     #[test]
@@ -707,7 +679,7 @@ mod tests {
 
     #[test]
     fn when_place_for_fruit_is_taken_first_empty_square_is_used() {
-        let mut game = create_game_instance!(3, 3, HardcodedNumbersGenerator);
+        let mut game = Game::<{3 * 3}, HardcodedNumbersGenerator>::new(3, 3);
 
         assert_board!(
             game.board(),
@@ -745,7 +717,7 @@ mod tests {
 
     #[test]
     fn when_snake_bites_itself_the_game_is_lost() {
-        let mut game = create_game_instance!(3, 3, HardcodedNumbersGenerator);
+        let mut game = Game::<{3 * 3}, HardcodedNumbersGenerator>::new(3, 3);
 
         assert_board!(
             game.board(),
@@ -785,7 +757,7 @@ mod tests {
 
     #[test]
     fn when_there_is_no_place_for_new_fruit_the_game_is_won() {
-        let mut game = create_game_instance!(3, 3, HardcodedNumbersGenerator);
+        let mut game = Game::<{3 * 3}, HardcodedNumbersGenerator>::new(3, 3);
 
         assert_board!(
             game.board(),
