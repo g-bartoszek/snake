@@ -1,9 +1,9 @@
 use rand;
-use snake::*;
 
 use cursive::traits::*;
 use cursive::views::{Canvas, OnEventView};
-use cursive::Cursive;
+use cursive::{Cursive, CursiveExt};
+use snake::{generic_array, Direction, Game, Location, Snake, Square};
 
 use std::thread;
 
@@ -46,7 +46,7 @@ fn main() {
                 let g = game.clone();
                 move |_, p| {
                     let mut game = g.lock().unwrap();
-                    for (Location{x, y}, s ) in game.board().iter() {
+                    for (Location { x, y }, s) in game.board().iter() {
                         p.print(
                             (x, y),
                             match s {

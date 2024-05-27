@@ -8,6 +8,6 @@ edition = "2018"
 
 [dependencies]
 snake = { path = "../snake-core" }
-rand = "0.6.5"
-cursive = "0.12"
-paste = "0.1"
+rand = "0.8.5"
+cursive = "0.20"
+paste = "1.0"

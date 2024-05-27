@@ -393,7 +393,7 @@ fn place_new_fruit(
 
 #[macro_export]
 macro_rules! create_game_instance {
-    ($width:expr, $height:expr, $rng:ty) => {
+    ($width:expr, $height:expr, $rng:ty) => {{
         paste::expr! {
             type Width = generic_array::typenum::[<U $width>];
             type Height = generic_array::typenum::[<U $height>];
@@ -401,7 +401,7 @@ macro_rules! create_game_instance {
 
             Game::<Array<Square>, Array<Location>, $rng>::new($width, $height)
         }
-    };
+    }};
 }
 
 #[cfg(feature = "std")]
